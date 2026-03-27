@@ -76,7 +76,7 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
 export function MaskConfig(props: {
   mask: Mask;
   updateMask: Updater<Mask>;
-  extraListItems?: JSX.Element;
+  extraListItems?: React.ReactNode;
   readonly?: boolean;
   shouldSyncFromGlobal?: boolean;
 }) {
