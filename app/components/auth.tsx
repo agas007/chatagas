@@ -65,8 +65,7 @@ export function AuthPage() {
 
       <PasswordInput
         style={{ marginTop: "3vh", marginBottom: "3vh" }}
-        aria={Locale.Settings.ShowPassword}
-        aria-label={Locale.Auth.Input}
+        aria-label={Locale.Settings.ShowPassword}
         value={accessStore.accessCode}
         type="text"
         placeholder={Locale.Auth.Input}
@@ -82,8 +81,7 @@ export function AuthPage() {
           <div className={styles["auth-tips"]}>{Locale.Auth.SubTips}</div>
           <PasswordInput
             style={{ marginTop: "3vh", marginBottom: "3vh" }}
-            aria={Locale.Settings.ShowPassword}
-            aria-label={Locale.Settings.Access.OpenAI.ApiKey.Placeholder}
+            aria-label={Locale.Settings.ShowPassword}
             value={accessStore.openaiApiKey}
             type="text"
             placeholder={Locale.Settings.Access.OpenAI.ApiKey.Placeholder}
@@ -95,8 +93,7 @@ export function AuthPage() {
           />
           <PasswordInput
             style={{ marginTop: "3vh", marginBottom: "3vh" }}
-            aria={Locale.Settings.ShowPassword}
-            aria-label={Locale.Settings.Access.Google.ApiKey.Placeholder}
+            aria-label={Locale.Settings.ShowPassword}
             value={accessStore.googleApiKey}
             type="text"
             placeholder={Locale.Settings.Access.Google.ApiKey.Placeholder}
@@ -128,18 +125,17 @@ export function AuthPage() {
 
 function TopBanner() {
   const [isHovered, setIsHovered] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return storage.getItem("bannerDismissed") !== "true";
+  });
   const isMobile = useMobileScreen();
   useEffect(() => {
     // 检查 localStorage 中是否有标记
     const bannerDismissed = storage.getItem("bannerDismissed");
-    // 如果标记不存在，存储默认值并显示横幅
+    // 如果标记不存在，存储默认值
     if (!bannerDismissed) {
       storage.setItem("bannerDismissed", "false");
-      setIsVisible(true); // 显示横幅
-    } else if (bannerDismissed === "true") {
-      // 如果标记为 "true"，则隐藏横幅
-      setIsVisible(false);
     }
   }, []);
 

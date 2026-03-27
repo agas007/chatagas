@@ -270,23 +270,25 @@ export function Input(props: InputProps) {
 }
 
 export function PasswordInput(
-  props: HTMLProps<HTMLInputElement> & { aria?: string },
+  props: HTMLProps<HTMLInputElement> & { "aria-label"?: string },
 ) {
   const [visible, setVisible] = useState(false);
   function changeVisibility() {
     setVisible(!visible);
   }
 
+  const { "aria-label": ariaLabel, ...rest } = props;
+
   return (
     <div className={"password-input-container"}>
       <IconButton
-        aria={props.aria}
+        aria={ariaLabel}
         icon={visible ? <EyeIcon /> : <EyeOffIcon />}
         onClick={changeVisibility}
         className={"password-eye"}
       />
       <input
-        {...props}
+        {...rest}
         type={visible ? "text" : "password"}
         className={"password-input"}
       />
@@ -490,8 +492,8 @@ export function Selector<T>(props: {
     Array.isArray(props.defaultSelectedValue)
       ? props.defaultSelectedValue
       : props.defaultSelectedValue !== undefined
-      ? [props.defaultSelectedValue]
-      : [],
+        ? [props.defaultSelectedValue]
+        : [],
   );
 
   const handleSelection = (e: MouseEvent, value: T) => {

@@ -98,6 +98,8 @@ export async function requestOpenai(req: NextRequest) {
       ...(serverConfig.openaiOrgId && {
         "OpenAI-Organization": serverConfig.openaiOrgId,
       }),
+      "HTTP-Referer": "https://agaschat.vercel.app",
+      "X-Title": "Agas Chat AI",
     },
     method: req.method,
     body: req.body,
