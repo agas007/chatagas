@@ -127,7 +127,8 @@ export function PreCode(props: { children?: React.ReactNode }) {
       });
       setTimeout(renderArtifacts, 1);
     }
-  }, [renderArtifacts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
