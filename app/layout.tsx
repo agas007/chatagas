@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-page-custom-font */
 import "./styles/globals.scss";
 import "./styles/markdown.scss";
 import "./styles/highlight.scss";
@@ -35,7 +34,7 @@ export default function RootLayout({
   const serverConfig = getServerSideConfig();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="config" content={JSON.stringify(getClientConfig())} />
         <meta
@@ -49,7 +48,7 @@ export default function RootLayout({
         ></link>
         <script src="/serviceWorkerRegister.js" defer></script>
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         {serverConfig?.isVercel && (
           <>
