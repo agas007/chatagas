@@ -1,5 +1,5 @@
-@import "./animation.scss";
-@import "./window.scss";
+@use "./animation.scss" as *;
+@use "./window.scss" as *;
 
 @mixin light {
   --theme: light;

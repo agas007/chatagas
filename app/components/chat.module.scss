@@ -1,4 +1,4 @@
-@import "../styles/animation.scss";
+@use "../styles/animation.scss" as *;
 
 .attach-images {
   position: absolute;
@@ -655,8 +655,7 @@
   min-height: 68px;
 }
 
-.chat-input:focus {
-}
+
 
 .chat-input-send {
   background-color: var(--primary);
