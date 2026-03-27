@@ -1731,7 +1731,7 @@ function ChatContent() {
                   icon={<RenameIcon />}
                   bordered
                   title={Locale.Chat.EditMessage.Title}
-                  aria={Locale.Chat.EditMessage.Title}
+                  ariaLabel={Locale.Chat.Actions.Edit}
                   onClick={() => setIsEditingMessage(true)}
                 />
               </div>
@@ -1752,7 +1752,7 @@ function ChatContent() {
                   icon={config.tightBorder ? <MinIcon /> : <MaxIcon />}
                   bordered
                   title={Locale.Chat.Actions.FullScreen}
-                  aria={Locale.Chat.Actions.FullScreen}
+                  ariaLabel={Locale.Chat.Actions.FullScreen}
                   onClick={() => {
                     config.update(
                       (config) => (config.tightBorder = !config.tightBorder),
@@ -1811,7 +1811,7 @@ function ChatContent() {
                               <div className={styles["chat-message-edit"]}>
                                 <IconButton
                                   icon={<EditIcon />}
-                                  aria={Locale.Chat.Actions.Edit}
+                                  ariaLabel={Locale.Chat.Actions.Edit}
                                   onClick={async () => {
                                     const newMessage = await showPrompt(
                                       Locale.Chat.Actions.Edit,
@@ -1987,6 +1987,7 @@ function ChatContent() {
                               defaultShow={i >= messages.length - 6}
                             />
                             {getMessageImages(message).length == 1 && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
                               <img
                                 className={styles["chat-message-item-image"]}
                                 src={getMessageImages(message)[0]}
@@ -2006,6 +2007,7 @@ function ChatContent() {
                                 {getMessageImages(message).map(
                                   (image, index) => {
                                     return (
+                                      /* eslint-disable-next-line @next/next/no-img-element */
                                       <img
                                         className={
                                           styles[

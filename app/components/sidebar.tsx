@@ -330,7 +330,7 @@ export function SideBar(props: { className?: string }) {
             <div className={styles["sidebar-action"]}>
               <Link to={Path.Settings}>
                 <IconButton
-                  aria={Locale.Settings.Title}
+                  ariaLabel={Locale.Settings.Title}
                   icon={<SettingsIcon />}
                   shadow
                 />
@@ -339,7 +339,7 @@ export function SideBar(props: { className?: string }) {
             <div className={styles["sidebar-action"]}>
               <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
                 <IconButton
-                  aria={Locale.Export.MessageFromChatGPT}
+                  ariaLabel={Locale.Export.MessageFromChatGPT}
                   icon={<GithubIcon />}
                   shadow
                 />

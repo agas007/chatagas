@@ -285,7 +285,7 @@ export function PasswordInput(
   return (
     <div className={"password-input-container"}>
       <IconButton
-        aria={ariaLabel}
+        ariaLabel={ariaLabel}
         icon={visible ? <EyeIcon /> : <EyeOffIcon />}
         onClick={changeVisibility}
         className={"password-eye"}

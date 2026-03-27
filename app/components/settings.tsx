@@ -77,7 +77,7 @@ import {
   SiliconFlow,
   AI302,
 } from "../constant";
-import { Prompt, SearchService, usePromptStore } from "../store/prompt";
+import { SearchService, usePromptStore } from "../store/prompt";
 import { ErrorBoundary } from "./error";
 import { InputRange } from "./input-range";
 import { useNavigate } from "react-router-dom";
@@ -145,19 +145,16 @@ function UserPromptModal(props: { onClose?: () => void }) {
   const builtinPrompts = SearchService.builtinPrompts;
   const allPrompts = userPrompts.concat(builtinPrompts);
   const [searchInput, setSearchInput] = useState("");
-  const [searchPrompts, setSearchPrompts] = useState<Prompt[]>([]);
+  const searchPrompts = useMemo(() => {
+    if (searchInput.length > 0) {
+      return SearchService.search(searchInput);
+    }
+    return [];
+  }, [searchInput]);
+
   const prompts = searchInput.length > 0 ? searchPrompts : allPrompts;
 
   const [editingPromptId, setEditingPromptId] = useState<string>();
-
-  useEffect(() => {
-    if (searchInput.length > 0) {
-      const searchResult = SearchService.search(searchInput);
-      setSearchPrompts(searchResult);
-    } else {
-      setSearchPrompts([]);
-    }
-  }, [searchInput]);
 
   return (
     <div className="modal-mask">
@@ -255,7 +252,7 @@ function DangerItems() {
         subTitle={Locale.Settings.Danger.Reset.SubTitle}
       >
         <IconButton
-          aria={Locale.Settings.Danger.Reset.Title}
+          ariaLabel={Locale.Settings.Danger.Reset.Title}
           text={Locale.Settings.Danger.Reset.Action}
           onClick={async () => {
             if (await showConfirm(Locale.Settings.Danger.Reset.Confirm)) {
@@ -270,7 +267,7 @@ function DangerItems() {
         subTitle={Locale.Settings.Danger.Clear.SubTitle}
       >
         <IconButton
-          aria={Locale.Settings.Danger.Clear.Title}
+          ariaLabel={Locale.Settings.Danger.Clear.Title}
           text={Locale.Settings.Danger.Clear.Action}
           onClick={async () => {
             if (await showConfirm(Locale.Settings.Danger.Clear.Confirm)) {
@@ -524,7 +521,7 @@ function SyncItems() {
         >
           <div style={{ display: "flex" }}>
             <IconButton
-              aria={Locale.Settings.Sync.CloudState + Locale.UI.Config}
+              ariaLabel={Locale.Settings.Sync.CloudState + Locale.UI.Config}
               icon={<ConfigIcon />}
               text={Locale.UI.Config}
               onClick={() => {
@@ -555,7 +552,7 @@ function SyncItems() {
         >
           <div style={{ display: "flex" }}>
             <IconButton
-              aria={Locale.Settings.Sync.LocalState + Locale.UI.Export}
+              ariaLabel={Locale.Settings.Sync.LocalState + Locale.UI.Export}
               icon={<UploadIcon />}
               text={Locale.UI.Export}
               onClick={() => {
@@ -563,7 +560,7 @@ function SyncItems() {
               }}
             />
             <IconButton
-              aria={Locale.Settings.Sync.LocalState + Locale.UI.Import}
+              ariaLabel={Locale.Settings.Sync.LocalState + Locale.UI.Import}
               icon={<DownloadIcon />}
               text={Locale.UI.Import}
               onClick={() => {
@@ -704,7 +701,7 @@ export function Settings() {
       subTitle={Locale.Settings.Access.SaasStart.SubTitle}
     >
       <IconButton
-        aria={
+        ariaLabel={
           Locale.Settings.Access.SaasStart.Title +
           Locale.Settings.Access.SaasStart.ChatNow
         }
@@ -762,7 +759,6 @@ export function Settings() {
         subTitle={Locale.Settings.Access.OpenAI.ApiKey.SubTitle}
       >
         <PasswordInput
-          aria={Locale.Settings.ShowPassword}
           aria-label={Locale.Settings.Access.OpenAI.ApiKey.Title}
           value={accessStore.openaiApiKey}
           type="text"
@@ -1459,44 +1455,44 @@ export function Settings() {
     </>
   );
 
-  const ai302ConfigComponent = accessStore.provider === ServiceProvider["302.AI"] && (
+  const ai302ConfigComponent = accessStore.provider ===
+    ServiceProvider["302.AI"] && (
     <>
       <ListItem
-          title={Locale.Settings.Access.AI302.Endpoint.Title}
-          subTitle={
-            Locale.Settings.Access.AI302.Endpoint.SubTitle +
-            AI302.ExampleEndpoint
+        title={Locale.Settings.Access.AI302.Endpoint.Title}
+        subTitle={
+          Locale.Settings.Access.AI302.Endpoint.SubTitle + AI302.ExampleEndpoint
+        }
+      >
+        <input
+          aria-label={Locale.Settings.Access.AI302.Endpoint.Title}
+          type="text"
+          value={accessStore.ai302Url}
+          placeholder={AI302.ExampleEndpoint}
+          onChange={(e) =>
+            accessStore.update(
+              (access) => (access.ai302Url = e.currentTarget.value),
+            )
           }
-        >
-          <input
-            aria-label={Locale.Settings.Access.AI302.Endpoint.Title}
-            type="text"
-            value={accessStore.ai302Url}
-            placeholder={AI302.ExampleEndpoint}
-            onChange={(e) =>
-              accessStore.update(
-                (access) => (access.ai302Url = e.currentTarget.value),
-              )
-            }
-          ></input>
-        </ListItem>
-        <ListItem
-          title={Locale.Settings.Access.AI302.ApiKey.Title}
-          subTitle={Locale.Settings.Access.AI302.ApiKey.SubTitle}
-        >
-          <PasswordInput
-            aria-label={Locale.Settings.Access.AI302.ApiKey.Title}
-            value={accessStore.ai302ApiKey}
-            type="text"
-            placeholder={Locale.Settings.Access.AI302.ApiKey.Placeholder}
-            onChange={(e) => {
-              accessStore.update(
-                (access) => (access.ai302ApiKey = e.currentTarget.value),
-              );
-            }}
-          />
-        </ListItem>
-      </>
+        ></input>
+      </ListItem>
+      <ListItem
+        title={Locale.Settings.Access.AI302.ApiKey.Title}
+        subTitle={Locale.Settings.Access.AI302.ApiKey.SubTitle}
+      >
+        <PasswordInput
+          aria-label={Locale.Settings.Access.AI302.ApiKey.Title}
+          value={accessStore.ai302ApiKey}
+          type="text"
+          placeholder={Locale.Settings.Access.AI302.ApiKey.Placeholder}
+          onChange={(e) => {
+            accessStore.update(
+              (access) => (access.ai302ApiKey = e.currentTarget.value),
+            );
+          }}
+        />
+      </ListItem>
+    </>
   );
 
   return (
@@ -1515,7 +1511,7 @@ export function Settings() {
           <div className="window-action-button"></div>
           <div className="window-action-button">
             <IconButton
-              aria={Locale.UI.Close}
+              ariaLabel={Locale.UI.Close}
               icon={<CloseIcon />}
               onClick={() => navigate(Path.Home)}
               bordered
@@ -1557,8 +1553,8 @@ export function Settings() {
               checkingUpdate
                 ? Locale.Settings.Update.IsChecking
                 : hasNewVersion
-                ? Locale.Settings.Update.FoundUpdate(remoteId ?? "ERROR")
-                : Locale.Settings.Update.IsLatest
+                  ? Locale.Settings.Update.FoundUpdate(remoteId ?? "ERROR")
+                  : Locale.Settings.Update.IsLatest
             }
           >
             {checkingUpdate ? (
@@ -1642,7 +1638,7 @@ export function Settings() {
             subTitle={Locale.Settings.FontSize.SubTitle}
           >
             <InputRange
-              aria={Locale.Settings.FontSize.Title}
+              ariaLabel={Locale.Settings.FontSize.Title}
               title={`${config.fontSize ?? 14}px`}
               value={config.fontSize}
               min="12"
@@ -1807,7 +1803,9 @@ export function Settings() {
             )}
           >
             <IconButton
-              aria={Locale.Settings.Prompt.List + Locale.Settings.Prompt.Edit}
+              ariaLabel={
+                Locale.Settings.Prompt.List + Locale.Settings.Prompt.Edit
+              }
               icon={<EditIcon />}
               text={Locale.Settings.Prompt.Edit}
               onClick={() => setShowPromptModal(true)}
