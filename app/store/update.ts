@@ -30,22 +30,29 @@ function formatVersionDate(t: string) {
 type VersionType = "date" | "tag";
 
 async function getVersion(type: VersionType) {
-  if (type === "date") {
-    const data = (await (await fetch(FETCH_COMMIT_URL)).json()) as {
-      commit: {
-        author: { name: string; date: string };
-      };
-      sha: string;
-    }[];
-    const remoteCommitTime = data[0].commit.author.date;
-    const remoteId = new Date(remoteCommitTime).getTime().toString();
-    return remoteId;
-  } else if (type === "tag") {
-    const data = (await (await fetch(FETCH_TAG_URL)).json()) as {
-      commit: { sha: string; url: string };
-      name: string;
-    }[];
-    return data.at(0)?.name;
+  try {
+    const url = type === "date" ? FETCH_COMMIT_URL : FETCH_TAG_URL;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`fetch version failed with status ${res.status}`);
+    }
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error(
+        `fetch version failed: invalid content-type ${contentType}`,
+      );
+    }
+
+    const data = await res.json();
+    if (type === "date") {
+      const remoteCommitTime = data[0].commit.author.date;
+      const remoteId = new Date(remoteCommitTime).getTime().toString();
+      return remoteId;
+    } else if (type === "tag") {
+      return data.at(0)?.name;
+    }
+  } catch (error) {
+    console.error("[Fetch Upstream Commit Id]", error);
   }
 }
 

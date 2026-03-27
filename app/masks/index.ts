@@ -24,9 +24,18 @@ export const BUILTIN_MASKS: BuiltinMask[] = [];
 if (typeof window != "undefined") {
   // run in browser skip in next server
   fetch("/masks.json")
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) {
+        return { cn: [], tw: [], en: [] };
+      }
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        return { cn: [], tw: [], en: [] };
+      }
+      return res.json().catch(() => ({ cn: [], tw: [], en: [] }));
+    })
     .catch((error) => {
-      console.error("[Fetch] failed to fetch masks", error);
+      console.debug("[Fetch] failed to fetch masks", error);
       return { cn: [], tw: [], en: [] };
     })
     .then((masks) => {
