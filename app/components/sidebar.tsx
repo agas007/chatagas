@@ -68,7 +68,7 @@ export function useDragSideBar() {
   const config = useAppConfig();
   const startX = useRef(0);
   const startDragWidth = useRef(config.sidebarWidth ?? DEFAULT_SIDEBAR_WIDTH);
-  const lastUpdateTime = useRef(Date.now());
+  const lastUpdateTime = useRef(0);
 
   const toggleSideBar = () => {
     config.update((config) => {
@@ -250,8 +250,8 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="NextChat"
-        subTitle="Build your own AI assistant."
+        title="Agas Chat AI"
+        subTitle="Your personal AI assistant."
         logo={<ChatGptIcon />}
         shouldNarrow={shouldNarrow}
       >

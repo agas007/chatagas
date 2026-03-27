@@ -27,8 +27,8 @@ import { Avatar } from "./emoji";
 import clsx from "clsx";
 
 export function Popover(props: {
-  children: JSX.Element;
-  content: JSX.Element;
+  children: React.ReactNode;
+  content: React.ReactNode;
   open?: boolean;
   onClose?: () => void;
 }) {
@@ -45,7 +45,10 @@ export function Popover(props: {
   );
 }
 
-export function Card(props: { children: JSX.Element[]; className?: string }) {
+export function Card(props: {
+  children: React.ReactNode[];
+  className?: string;
+}) {
   return (
     <div className={clsx(styles.card, props.className)}>{props.children}</div>
   );
@@ -53,9 +56,9 @@ export function Card(props: { children: JSX.Element[]; className?: string }) {
 
 export function ListItem(props: {
   title?: string;
-  subTitle?: string | JSX.Element;
-  children?: JSX.Element | JSX.Element[];
-  icon?: JSX.Element;
+  subTitle?: string | React.ReactNode;
+  children?: React.ReactNode | React.ReactNode[];
+  icon?: React.ReactNode;
   className?: string;
   onClick?: (e: MouseEvent) => void;
   vertical?: boolean;
@@ -556,7 +559,7 @@ export function Selector<T>(props: {
 }
 export function FullScreen(props: any) {
   const { children, right = 10, top = 10, ...rest } = props;
-  const ref = useRef<HTMLDivElement>();
+  const ref = useRef<HTMLDivElement>(null);
   const [fullScreen, setFullScreen] = useState(false);
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
