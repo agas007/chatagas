@@ -177,13 +177,13 @@ export const useAppConfig = createPersistStore(
       const modelMap: Record<string, LLMModel> = {};
 
       for (const model of oldModels) {
-        model.available = false;
-        modelMap[`${model.name}@${model?.provider?.id}`] = model;
+        const m = { ...model, available: false };
+        modelMap[`${m.name}@${m?.provider?.id}`] = m;
       }
 
       for (const model of newModels) {
-        model.available = true;
-        modelMap[`${model.name}@${model?.provider?.id}`] = model;
+        const m = { ...model, available: true };
+        modelMap[`${m.name}@${m?.provider?.id}`] = m;
       }
 
       set(() => ({
@@ -245,7 +245,7 @@ export const useAppConfig = createPersistStore(
         state.modelConfig.template =
           state.modelConfig.template !== DEFAULT_INPUT_TEMPLATE
             ? state.modelConfig.template
-            : config?.template ?? DEFAULT_INPUT_TEMPLATE;
+            : (config?.template ?? DEFAULT_INPUT_TEMPLATE);
       }
 
       if (version < 4.1) {

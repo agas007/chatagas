@@ -259,7 +259,18 @@ export const useAccessStore = createPersistStore(
           ...getHeaders(),
         },
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`fetch config failed with status ${res.status}`);
+          }
+          const contentType = res.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error(
+              `fetch config failed: invalid content-type ${contentType}`,
+            );
+          }
+          return res.json();
+        })
         .then((res) => {
           const defaultModel = res.defaultModel ?? "";
           if (defaultModel !== "") {
