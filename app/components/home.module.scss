@@ -280,6 +280,101 @@
   cursor: pointer;
 }
 
+.chat-folder-list {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-folder-toggle {
+  border: var(--border-in-light);
+  border-radius: 8px;
+  background: var(--second);
+  color: var(--black);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.chat-folder-item {
+  border: var(--border-in-light);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--white);
+}
+
+.chat-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.chat-folder-drag {
+  border: var(--border-in-light);
+  border-radius: 6px;
+  background: var(--second);
+  color: var(--black);
+  padding: 2px 6px;
+  cursor: grab;
+}
+
+.chat-folder-name {
+  background: transparent;
+  border: 0;
+  color: var(--black);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0;
+  text-align: left;
+  flex: 1;
+}
+
+.chat-folder-input {
+  border: var(--border-in-light);
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: var(--black);
+  background: var(--white);
+  flex: 1;
+}
+
+.chat-folder-badge {
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 7px;
+}
+
+.chat-folder-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.chat-folder-action-button {
+  border: var(--border-in-light);
+  border-radius: 6px;
+  background: var(--second);
+  color: var(--black);
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.chat-folder-drop {
+  border: 1px dashed var(--primary);
+  border-radius: 6px;
+  color: var(--black);
+  font-size: 12px;
+  opacity: 0.8;
+  padding: 6px 8px;
+}
+
 .chat-item-count,
 .chat-item-date {
   overflow: hidden;

@@ -100,6 +100,7 @@ export interface ChatFolder {
   id: string;
   name: string;
   createdAt: number;
+  pinned?: boolean;
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
@@ -321,6 +322,29 @@ export const useChatStore = createPersistStore(
             session.folderId === folderId
               ? { ...session, folderId: undefined }
               : session,
+          ),
+        }));
+      },
+
+      reorderFolder(folderId: string, targetFolderId: string) {
+        if (folderId === targetFolderId) return;
+        set((state) => {
+          const folders = state.folders.slice();
+          const from = folders.findIndex((f) => f.id === folderId);
+          const to = folders.findIndex((f) => f.id === targetFolderId);
+          if (from < 0 || to < 0) return {};
+          const [folder] = folders.splice(from, 1);
+          folders.splice(to, 0, folder);
+          return { folders };
+        });
+      },
+
+      togglePinFolder(folderId: string) {
+        set((state) => ({
+          folders: state.folders.map((folder) =>
+            folder.id === folderId
+              ? { ...folder, pinned: !folder.pinned }
+              : folder,
           ),
         }));
       },
@@ -929,7 +953,7 @@ export const useChatStore = createPersistStore(
   },
   {
     name: StoreKey.Chat,
-    version: 3.4,
+    version: 3.5,
     migrate(persistedState, version) {
       const state = persistedState as any;
       const newState = JSON.parse(
@@ -1003,6 +1027,15 @@ export const useChatStore = createPersistStore(
             s.folderId = undefined;
           }
         });
+      }
+
+      if (version < 3.5) {
+        (newState as any).folders = ((newState as any).folders || []).map(
+          (folder: ChatFolder) => ({
+            ...folder,
+            pinned: folder.pinned ?? false,
+          }),
+        );
       }
 
       return newState as any;
