@@ -109,6 +109,27 @@ export function ModelConfigList(props: {
           }
         ></input>
       </ListItem>
+      <ListItem
+        title={Locale.Settings.MaxContextTokens.Title}
+        subTitle={Locale.Settings.MaxContextTokens.SubTitle}
+      >
+        <input
+          aria-label={Locale.Settings.MaxContextTokens.Title}
+          type="number"
+          min={0}
+          max={512000}
+          value={props.modelConfig.maxContextTokens ?? 0}
+          onChange={(e) =>
+            props.updateConfig(
+              (config) =>
+                (config.maxContextTokens =
+                  ModalConfigValidator.maxContextTokens(
+                    e.currentTarget.valueAsNumber,
+                  )),
+            )
+          }
+        ></input>
+      </ListItem>
 
       {props.modelConfig?.providerName == ServiceProvider.Google ? null : (
         <>

@@ -573,6 +573,11 @@ const en: LocaleType = {
       Title: "Max Tokens",
       SubTitle: "Maximum length of input tokens and generated tokens",
     },
+    MaxContextTokens: {
+      Title: "Context Token Limit",
+      SubTitle:
+        "Maximum context tokens sent per request; set 0 to disable this extra limit",
+    },
     PresencePenalty: {
       Title: "Presence Penalty",
       SubTitle:

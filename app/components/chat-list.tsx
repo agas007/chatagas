@@ -16,7 +16,7 @@ import { Path } from "../constant";
 import { MaskAvatar } from "./mask";
 import { Mask } from "../store/mask";
 import { useRef, useEffect } from "react";
-import { showConfirm } from "./ui-lib";
+import { showConfirm, showPrompt } from "./ui-lib";
 import { useMobileScreen } from "../utils";
 import clsx from "clsx";
 
@@ -31,6 +31,9 @@ export function ChatItem(props: {
   index: number;
   narrow?: boolean;
   mask: Mask;
+  folderId?: string;
+  folders: { id: string; name: string }[];
+  onMoveFolder?: (folderId?: string) => void;
 }) {
   const draggableRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -83,6 +86,31 @@ export function ChatItem(props: {
                 </div>
                 <div className={styles["chat-item-date"]}>{props.time}</div>
               </div>
+              {!props.narrow && (
+                <div className={styles["chat-item-folder-row"]}>
+                  <span className={styles["chat-item-folder-label"]}>
+                    Folder
+                  </span>
+                  <select
+                    className={styles["chat-item-folder-select"]}
+                    value={props.folderId ?? ""}
+                    onChange={(e) =>
+                      props.onMoveFolder?.(e.currentTarget.value || undefined)
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <option value="">Unsorted</option>
+                    {props.folders.map((folder) => (
+                      <option key={folder.id} value={folder.id}>
+                        {folder.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </>
           )}
 
@@ -104,12 +132,24 @@ export function ChatItem(props: {
 
 export function ChatList(props: { narrow?: boolean }) {
   const sessions = useChatStore((state) => state.sessions);
+  const folders = useChatStore((state) => state.folders);
+  const activeFolderId = useChatStore((state) => state.activeFolderId);
   const selectedIndex = useChatStore((state) => state.currentSessionIndex);
   const selectSession = useChatStore((state) => state.selectSession);
   const moveSession = useChatStore((state) => state.moveSession);
+  const setActiveFolder = useChatStore((state) => state.setActiveFolder);
+  const createFolder = useChatStore((state) => state.createFolder);
+  const deleteFolder = useChatStore((state) => state.deleteFolder);
+  const assignSessionFolder = useChatStore(
+    (state) => state.assignSessionFolder,
+  );
   const chatStore = useChatStore();
   const navigate = useNavigate();
   const isMobileScreen = useMobileScreen();
+  const visibleSessions =
+    activeFolderId === "all"
+      ? sessions
+      : sessions.filter((item) => item.folderId === activeFolderId);
 
   const onDragEnd: OnDragEndResponder = (result) => {
     const { destination, source } = result;
@@ -124,47 +164,107 @@ export function ChatList(props: { narrow?: boolean }) {
       return;
     }
 
-    moveSession(source.index, destination.index);
+    const sourceSession = visibleSessions[source.index];
+    const destinationSession = visibleSessions[destination.index];
+    if (!sourceSession || !destinationSession) return;
+
+    const from = sessions.findIndex((s) => s.id === sourceSession.id);
+    const to = sessions.findIndex((s) => s.id === destinationSession.id);
+    if (from < 0 || to < 0) return;
+    moveSession(from, to);
   };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <Droppable droppableId="chat-list">
-        {(provided) => (
-          <div
-            className={styles["chat-list"]}
-            ref={provided.innerRef}
-            {...provided.droppableProps}
+    <>
+      {!props.narrow && (
+        <div className={styles["chat-folder-toolbar"]}>
+          <select
+            className={styles["chat-folder-filter"]}
+            value={activeFolderId}
+            onChange={(e) => setActiveFolder(e.currentTarget.value)}
           >
-            {sessions.map((item: ChatSession, i: number) => (
-              <ChatItem
-                title={item.topic}
-                time={new Date(item.lastUpdate).toLocaleString()}
-                count={item.messages.length}
-                key={item.id}
-                id={item.id}
-                index={i}
-                selected={i === selectedIndex}
-                onClick={() => {
-                  navigate(Path.Chat);
-                  selectSession(i);
-                }}
-                onDelete={async () => {
-                  if (
-                    (!props.narrow && !isMobileScreen) ||
-                    (await showConfirm(Locale.Home.DeleteChat))
-                  ) {
-                    chatStore.deleteSession(i);
-                  }
-                }}
-                narrow={props.narrow}
-                mask={item.mask}
-              />
+            <option value="all">All Chats</option>
+            {folders.map((folder) => (
+              <option key={folder.id} value={folder.id}>
+                {folder.name}
+              </option>
             ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
+          </select>
+          <button
+            className={styles["chat-folder-button"]}
+            onClick={async (e) => {
+              e.stopPropagation();
+              const name = await showPrompt("Create folder", "", 2);
+              if (name.trim()) createFolder(name);
+            }}
+          >
+            + Folder
+          </button>
+          {activeFolderId !== "all" && (
+            <button
+              className={styles["chat-folder-button"]}
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (
+                  await showConfirm("Delete this folder? Chats will be kept.")
+                ) {
+                  deleteFolder(activeFolderId);
+                }
+              }}
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      )}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="chat-list">
+          {(provided) => (
+            <div
+              className={styles["chat-list"]}
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {visibleSessions.map((item: ChatSession, i: number) => {
+                const originalIndex = sessions.findIndex(
+                  (s) => s.id === item.id,
+                );
+                return (
+                  <ChatItem
+                    title={item.topic}
+                    time={new Date(item.lastUpdate).toLocaleString()}
+                    count={item.messages.length}
+                    key={item.id}
+                    id={item.id}
+                    index={i}
+                    selected={originalIndex === selectedIndex}
+                    onClick={() => {
+                      navigate(Path.Chat);
+                      selectSession(originalIndex);
+                    }}
+                    onDelete={async () => {
+                      if (
+                        (!props.narrow && !isMobileScreen) ||
+                        (await showConfirm(Locale.Home.DeleteChat))
+                      ) {
+                        chatStore.deleteSession(originalIndex);
+                      }
+                    }}
+                    onMoveFolder={(folderId) =>
+                      assignSessionFolder(item.id, folderId)
+                    }
+                    folderId={item.folderId}
+                    folders={folders}
+                    narrow={props.narrow}
+                    mask={item.mask}
+                  />
+                );
+              })}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </>
   );
 }

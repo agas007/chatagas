@@ -93,6 +93,13 @@ export interface ChatSession {
   clearContextIndex?: number;
 
   mask: Mask;
+  folderId?: string;
+}
+
+export interface ChatFolder {
+  id: string;
+  name: string;
+  createdAt: number;
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
@@ -225,6 +232,8 @@ async function getMcpSystemPrompt(): Promise<string> {
 
 const DEFAULT_CHAT_STATE = {
   sessions: [createEmptySession()],
+  folders: [] as ChatFolder[],
+  activeFolderId: "all",
   currentSessionIndex: 0,
   lastInput: "",
 };
@@ -259,6 +268,7 @@ export const useChatStore = createPersistStore(
             ...currentSession.mask.modelConfig,
           },
         };
+        newSession.folderId = currentSession.folderId;
 
         set((state) => ({
           currentSessionIndex: 0,
@@ -270,6 +280,56 @@ export const useChatStore = createPersistStore(
         set(() => ({
           sessions: [createEmptySession()],
           currentSessionIndex: 0,
+        }));
+      },
+
+      setActiveFolder(folderId: string) {
+        set(() => ({ activeFolderId: folderId }));
+      },
+
+      createFolder(name: string) {
+        const folderName = name.trim();
+        if (!folderName) return;
+        set((state) => ({
+          folders: [
+            {
+              id: nanoid(),
+              name: folderName,
+              createdAt: Date.now(),
+            },
+            ...state.folders,
+          ],
+        }));
+      },
+
+      renameFolder(folderId: string, name: string) {
+        const folderName = name.trim();
+        if (!folderName) return;
+        set((state) => ({
+          folders: state.folders.map((folder) =>
+            folder.id === folderId ? { ...folder, name: folderName } : folder,
+          ),
+        }));
+      },
+
+      deleteFolder(folderId: string) {
+        set((state) => ({
+          folders: state.folders.filter((folder) => folder.id !== folderId),
+          activeFolderId:
+            state.activeFolderId === folderId ? "all" : state.activeFolderId,
+          sessions: state.sessions.map((session) =>
+            session.folderId === folderId
+              ? { ...session, folderId: undefined }
+              : session,
+          ),
+        }));
+      },
+
+      assignSessionFolder(sessionId: string, folderId?: string) {
+        set((state) => ({
+          sessions: state.sessions.map((session) =>
+            session.id === sessionId ? { ...session, folderId } : session,
+          ),
         }));
       },
 
@@ -306,6 +366,7 @@ export const useChatStore = createPersistStore(
 
       newSession(mask?: Mask) {
         const session = createEmptySession();
+        const activeFolderId = get().activeFolderId;
 
         if (mask) {
           const config = useAppConfig.getState();
@@ -319,6 +380,9 @@ export const useChatStore = createPersistStore(
             },
           };
           session.topic = mask.name;
+        }
+        if (activeFolderId !== "all") {
+          session.folderId = activeFolderId;
         }
 
         set((state) => ({
@@ -615,12 +679,17 @@ export const useChatStore = createPersistStore(
         // and if user has cleared history messages, we should exclude the memory too.
         const contextStartIndex = Math.max(clearContextIndex, memoryStartIndex);
         const maxTokenThreshold = modelConfig.max_tokens;
+        const maxContextTokenThreshold = modelConfig.maxContextTokens || 0;
 
         // get recent messages as much as possible
         const reversedRecentMessages = [];
         for (
           let i = totalMessageCount - 1, tokenCount = 0;
-          i >= contextStartIndex && tokenCount < maxTokenThreshold;
+          i >= contextStartIndex &&
+          tokenCount <
+            (maxContextTokenThreshold > 0
+              ? maxContextTokenThreshold
+              : maxTokenThreshold);
           i -= 1
         ) {
           const msg = messages[i];
@@ -860,7 +929,7 @@ export const useChatStore = createPersistStore(
   },
   {
     name: StoreKey.Chat,
-    version: 3.3,
+    version: 3.4,
     migrate(persistedState, version) {
       const state = persistedState as any;
       const newState = JSON.parse(
@@ -922,6 +991,17 @@ export const useChatStore = createPersistStore(
           const config = useAppConfig.getState();
           s.mask.modelConfig.compressModel = "";
           s.mask.modelConfig.compressProviderName = "";
+        });
+      }
+
+      if (version < 3.4) {
+        // add folders metadata and session folder reference
+        (newState as any).folders = [];
+        (newState as any).activeFolderId = "all";
+        newState.sessions.forEach((s) => {
+          if (!Object.prototype.hasOwnProperty.call(s, "folderId")) {
+            s.folderId = undefined;
+          }
         });
       }
 

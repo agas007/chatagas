@@ -232,6 +232,54 @@
   animation: slide-in ease 0.3s;
 }
 
+.chat-item-folder-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-item-folder-label {
+  font-size: 11px;
+  color: rgb(166, 166, 166);
+}
+
+.chat-item-folder-select {
+  flex: 1;
+  min-width: 0;
+  border: var(--border-in-light);
+  border-radius: 6px;
+  padding: 3px 6px;
+  background: var(--white);
+  color: var(--black);
+}
+
+.chat-folder-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.chat-folder-filter {
+  flex: 1;
+  min-width: 0;
+  border: var(--border-in-light);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--white);
+  color: var(--black);
+}
+
+.chat-folder-button {
+  border: var(--border-in-light);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--black);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
 .chat-item-count,
 .chat-item-date {
   overflow: hidden;

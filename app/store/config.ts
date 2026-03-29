@@ -69,6 +69,7 @@ export const DEFAULT_CONFIG = {
     temperature: 0.5,
     top_p: 1,
     max_tokens: 4000,
+    maxContextTokens: 8000,
     presence_penalty: 0,
     frequency_penalty: 0,
     sendMemory: true,
@@ -147,6 +148,9 @@ export const ModalConfigValidator = {
   max_tokens(x: number) {
     return limitNumber(x, 0, 512000, 1024);
   },
+  maxContextTokens(x: number) {
+    return limitNumber(x, 0, 512000, 8000);
+  },
   presence_penalty(x: number) {
     return limitNumber(x, -2, 2, 0);
   },
@@ -195,7 +199,7 @@ export const useAppConfig = createPersistStore(
   }),
   {
     name: StoreKey.Config,
-    version: 4.1,
+    version: 4.2,
 
     merge(persistedState, currentState) {
       const state = persistedState as ChatConfig | undefined;
@@ -253,6 +257,11 @@ export const useAppConfig = createPersistStore(
           DEFAULT_CONFIG.modelConfig.compressModel;
         state.modelConfig.compressProviderName =
           DEFAULT_CONFIG.modelConfig.compressProviderName;
+      }
+
+      if (version < 4.2) {
+        state.modelConfig.maxContextTokens =
+          DEFAULT_CONFIG.modelConfig.maxContextTokens;
       }
 
       return state as any;

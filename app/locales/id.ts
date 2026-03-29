@@ -459,6 +459,11 @@ const id: PartialLocaleType = {
       Title: "Batas Token Per Respons",
       SubTitle: "Jumlah token maksimum yang digunakan per interaksi",
     },
+    MaxContextTokens: {
+      Title: "Batas Token Konteks",
+      SubTitle:
+        "Maksimum token konteks yang dikirim per request; isi 0 untuk tanpa batas tambahan",
+    },
     PresencePenalty: {
       Title: "Kedekatan Topik (presence_penalty)",
       SubTitle:

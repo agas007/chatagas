@@ -568,6 +568,10 @@ const cn = {
       Title: "单次回复限制 (max_tokens)",
       SubTitle: "单次交互所用的最大 Token 数",
     },
+    MaxContextTokens: {
+      Title: "上下文限制 (context tokens)",
+      SubTitle: "每次请求携带的上下文 Token 上限，0 表示不额外限制",
+    },
     PresencePenalty: {
       Title: "话题新鲜度 (presence_penalty)",
       SubTitle: "值越大，越有可能扩展到新话题",
