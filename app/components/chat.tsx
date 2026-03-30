@@ -1914,6 +1914,13 @@ function ChatContent() {
                                           )
                                         }
                                       />
+                                      <ChatAction
+                                        text={"Fork"}
+                                        icon={<ReturnIcon />}
+                                        onClick={() =>
+                                          chatStore.forkSessionFrom(session, i)
+                                        }
+                                      />
                                       {config.ttsConfig.enable && (
                                         <ChatAction
                                           text={

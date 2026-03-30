@@ -277,6 +277,30 @@ export const useChatStore = createPersistStore(
         }));
       },
 
+      forkSessionFrom(session: ChatSession, messageIndex: number) {
+        if (!session) return;
+        const newSession = createEmptySession();
+        newSession.topic = session.topic;
+        newSession.messages = session.messages
+          .slice(0, messageIndex + 1)
+          .map((msg) => ({
+            ...msg,
+            id: nanoid(),
+          }));
+        newSession.mask = {
+          ...session.mask,
+          modelConfig: {
+            ...session.mask.modelConfig,
+          },
+        };
+        newSession.folderId = session.folderId;
+
+        set((state) => ({
+          currentSessionIndex: 0,
+          sessions: [newSession, ...state.sessions],
+        }));
+      },
+
       clearSessions() {
         set(() => ({
           sessions: [createEmptySession()],
