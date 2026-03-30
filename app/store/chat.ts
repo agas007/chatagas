@@ -556,86 +556,114 @@ export const useChatStore = createPersistStore(
         const sendMessages = recentMessages.concat(userMessage);
         const messageIndex = session.messages.length + 1;
 
-        // save user's and bot's message
+        // save user's message
         get().updateTargetSession(session, (session) => {
           const savedUserMessage = {
             ...userMessage,
             content: mContent,
           };
-          session.messages = session.messages.concat([
-            savedUserMessage,
-            botMessage,
-          ]);
+          session.messages = session.messages.concat([savedUserMessage]);
         });
 
-        const api: ClientApi = getClientApi(modelConfig.providerName);
-        // make request
-        api.llm.chat({
-          messages: sendMessages,
-          config: { ...modelConfig, stream: true },
-          onUpdate(message) {
-            botMessage.streaming = true;
-            if (message) {
-              botMessage.content = message;
-            }
-            get().updateTargetSession(session, (session) => {
-              session.messages = session.messages.concat();
-            });
-          },
-          async onFinish(message) {
-            botMessage.streaming = false;
-            if (message) {
-              botMessage.content = message;
-              botMessage.date = new Date().toLocaleString();
-              get().onNewMessage(botMessage, session);
-            }
-            ChatControllerPool.remove(session.id, botMessage.id);
-          },
-          onBeforeTool(tool: ChatMessageTool) {
-            (botMessage.tools = botMessage?.tools || []).push(tool);
-            get().updateTargetSession(session, (session) => {
-              session.messages = session.messages.concat();
-            });
-          },
-          onAfterTool(tool: ChatMessageTool) {
-            botMessage?.tools?.forEach((t, i, tools) => {
-              if (tool.id == t.id) {
-                tools[i] = { ...tool };
-              }
-            });
-            get().updateTargetSession(session, (session) => {
-              session.messages = session.messages.concat();
-            });
-          },
-          onError(error) {
-            const isAborted = error.message?.includes?.("aborted");
-            botMessage.content +=
-              "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
-              });
-            botMessage.streaming = false;
-            userMessage.isError = !isAborted;
-            botMessage.isError = !isAborted;
-            get().updateTargetSession(session, (session) => {
-              session.messages = session.messages.concat();
-            });
-            ChatControllerPool.remove(
-              session.id,
-              botMessage.id ?? messageIndex,
-            );
+        const parallelModelsStr = (modelConfig as any).parallelModels || [];
+        const modelsToRun = [
+          { model: modelConfig.model, providerName: modelConfig.providerName },
+          ...parallelModelsStr.map((m: string) => {
+            const parts = m.split("@");
+            return { model: parts[0], providerName: parts[1] || "OpenAI" };
+          }),
+        ];
 
-            console.error("[Chat] failed ", error);
-          },
-          onController(controller) {
-            // collect controller for stop/retry
-            ChatControllerPool.addController(
-              session.id,
-              botMessage.id ?? messageIndex,
-              controller,
-            );
-          },
+        // Deduplicate
+        const uniqueModelsMap = new Map();
+        modelsToRun.forEach((m) =>
+          uniqueModelsMap.set(`${m.model}@${m.providerName}`, m),
+        );
+        const uniqueModels = Array.from(uniqueModelsMap.values());
+
+        uniqueModels.forEach(({ model, providerName }) => {
+          const botMessage: ChatMessage = createMessage({
+            role: "assistant",
+            streaming: true,
+            model: model as ModelType,
+          });
+
+          get().updateTargetSession(session, (session) => {
+            session.messages = session.messages.concat([botMessage]);
+          });
+
+          const api: ClientApi = getClientApi(providerName as ServiceProvider);
+          api.llm.chat({
+            messages: sendMessages,
+            config: {
+              ...modelConfig,
+              model: model as ModelType,
+              providerName: providerName as ServiceProvider,
+              stream: true,
+            },
+            onUpdate(message) {
+              botMessage.streaming = true;
+              if (message) {
+                botMessage.content = message;
+              }
+              get().updateTargetSession(session, (session) => {
+                session.messages = session.messages.concat();
+              });
+            },
+            async onFinish(message) {
+              botMessage.streaming = false;
+              if (message) {
+                botMessage.content = message;
+                botMessage.date = new Date().toLocaleString();
+                get().onNewMessage(botMessage, session);
+              }
+              ChatControllerPool.remove(session.id, botMessage.id);
+            },
+            onBeforeTool(tool: ChatMessageTool) {
+              (botMessage.tools = botMessage?.tools || []).push(tool);
+              get().updateTargetSession(session, (session) => {
+                session.messages = session.messages.concat();
+              });
+            },
+            onAfterTool(tool: ChatMessageTool) {
+              botMessage?.tools?.forEach((t, i, tools) => {
+                if (tool.id == t.id) {
+                  tools[i] = { ...tool };
+                }
+              });
+              get().updateTargetSession(session, (session) => {
+                session.messages = session.messages.concat();
+              });
+            },
+            onError(error) {
+              const isAborted = error.message?.includes?.("aborted");
+              botMessage.content +=
+                "\n\n" +
+                prettyObject({
+                  error: true,
+                  message: error.message,
+                });
+              botMessage.streaming = false;
+              userMessage.isError = !isAborted;
+              botMessage.isError = !isAborted;
+              get().updateTargetSession(session, (session) => {
+                session.messages = session.messages.concat();
+              });
+              ChatControllerPool.remove(
+                session.id,
+                botMessage.id ?? messageIndex,
+              );
+
+              console.error("[Chat] failed ", error);
+            },
+            onController(controller) {
+              ChatControllerPool.addController(
+                session.id,
+                botMessage.id ?? messageIndex,
+                controller,
+              );
+            },
+          });
         });
       },
 

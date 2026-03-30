@@ -676,13 +676,22 @@ export function ChatActions(props: {
 
         <ChatAction
           onClick={() => setShowModelSelector(true)}
-          text={currentModelName}
+          text={
+            currentModelName +
+            ((session.mask.modelConfig as any).parallelModels?.length
+              ? ` (+${(session.mask.modelConfig as any).parallelModels.length})`
+              : "")
+          }
           icon={<RobotIcon />}
         />
 
         {showModelSelector && (
           <Selector
-            defaultSelectedValue={`${currentModel}@${currentProviderName}`}
+            multiple={true}
+            defaultSelectedValue={[
+              `${currentModel}@${currentProviderName}`,
+              ...((session.mask.modelConfig as any).parallelModels || []),
+            ]}
             items={models.map((m) => ({
               title: `${m.displayName}${
                 m?.provider?.providerName
@@ -694,22 +703,30 @@ export function ChatActions(props: {
             onClose={() => setShowModelSelector(false)}
             onSelection={(s) => {
               if (s.length === 0) return;
-              const [model, providerName] = getModelProvider(s[0]);
               chatStore.updateTargetSession(session, (session) => {
+                const [first, ...rest] = s;
+                const [model, providerName] = getModelProvider(first);
                 session.mask.modelConfig.model = model as ModelType;
                 session.mask.modelConfig.providerName =
                   providerName as ServiceProvider;
+                (session.mask.modelConfig as any).parallelModels = rest;
                 session.mask.syncGlobalConfig = false;
               });
-              if (providerName == "ByteDance") {
-                const selectedModel = models.find(
-                  (m) =>
-                    m.name == model &&
-                    m?.provider?.providerName == providerName,
-                );
-                showToast(selectedModel?.displayName ?? "");
+
+              if (s.length === 1) {
+                const [model, providerName] = getModelProvider(s[0]);
+                if (providerName == "ByteDance") {
+                  const selectedModel = models.find(
+                    (m) =>
+                      m.name == model &&
+                      m?.provider?.providerName == providerName,
+                  );
+                  showToast(selectedModel?.displayName ?? "");
+                } else {
+                  showToast(model);
+                }
               } else {
-                showToast(model);
+                showToast(`${s.length} Models Selected`);
               }
             }}
           />
