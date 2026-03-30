@@ -7,18 +7,35 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
-# Chatagas Release v1.0.0 🚀
+# Chatagas Release v1.1.0 🚀
 
-Versi v1.0.0 resmi dirilis! Versi ini membawa perubahan besar pada pengalaman penggunaan Chatagas.
+Versi v1.1.0 resmi dirilis! Versi ini membawa fitur **RAG (Retrieval Augmented Generation)** dan dukungan media yang sangat powerful.
 
-### ⚡️ Parallel Multi-Model Chat
-Sekarang Anda bisa menjalankan beberapa model AI sekaligus dalam satu sesi chat! Bandingkan jawaban dari model yang berbeda secara instan.
+### 📄 Chat with PDF & XLSX
+Sekarang Anda bisa melakukan upload file PDF dan Excel langsung. Chatagas akan mengekstrak teksnya dan menggunakannya sebagai konteks obrolan.
 
-### 🔀 Fork Chat (Branching)
-Ingin mencoba skenario jawaban yang berbeda dari sebuah titik pesan? Gunakan fitur **Fork** untuk mencabang obrolan.
+### 📚 Knowledge Base (RAG)
+Kelola dokumen-dokumen penting Anda lewat panel **Knowledge**. AI akan menjawab pertanyaan Anda berdasarkan dokumen yang Anda upload secara cerdas.
 
 ### 💬 Text Selection Reply (Smart Quote)
-Cukup sorot (highlight) teks di dalam chat, dan tombol **Reply** akan muncul secara otomatis untuk mengutip bagian tersebut.
+Cukup sorot (highlight) teks di dalam chat, dan tombol **Reply** akan muncul secara otomatis untuk mengutip bagian tersebut dengan cepat.
+
+### 🎥 Video Analysis Support
+Support analisis file video untuk model yang mendukung multimodal (seperti Gemini).
+
+### 🛠️ Perbaikan & Bug Fixes
+- Dukungan penuh untuk \`pdfjs-dist v5.x\` di Next.js & React 19.
+- Perbaikan layout sidebar dan pratinjau lampiran file.
+
+---
+
+# Chatagas Release v1.0.0 🚀
+
+### ⚡️ Parallel Multi-Model Chat
+Bandingkan jawaban dari beberapa model AI sekaligus secara instan!
+
+### 🔀 Fork Chat (Branching)
+Gunakan fitur **Fork** untuk mencabang obrolan dari titik pesan mana pun.
 
 ### 🏷️ Sistem Versi Dinamis
 Sidebar kini menampilkan versi aplikasi secara dinamis yang tersinkronisasi langsung dengan sistem.

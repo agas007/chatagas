@@ -316,10 +316,38 @@
 
   &-content {
     min-width: 300px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    
+    .selector-search {
+      padding: 10px;
+      background: var(--white);
+      border-radius: 10px 10px 0 0;
+      border-bottom: var(--border-in-light);
+      
+      input {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: var(--border-in-light);
+        background: var(--bg-light);
+        color: var(--black);
+        font-size: 14px;
+        outline: none;
+        
+        &:focus {
+           border-color: var(--primary);
+        }
+      }
+    }
+
     .list {
-      max-height: 90vh;
+      max-height: 80vh;
       overflow-x: hidden;
       overflow-y: auto;
+      margin-bottom: 0;
+      border-radius: 0 0 10px 10px;
 
       .list-item {
         cursor: pointer;
@@ -336,4 +364,5 @@
     }
   }
 }
+
 

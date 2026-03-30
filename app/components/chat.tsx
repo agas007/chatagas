@@ -38,6 +38,7 @@ import ImageIcon from "../icons/image.svg";
 
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
+import AddIcon from "../icons/add.svg";
 import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
@@ -49,6 +50,7 @@ import PluginIcon from "../icons/plugin.svg";
 import ShortcutkeyIcon from "../icons/shortcutkey.svg";
 import McpToolIcon from "../icons/tool.svg";
 import HeadphoneIcon from "../icons/headphone.svg";
+import BookIcon from "../icons/prompt.svg";
 import {
   BOT_HELLO,
   ChatMessage,
@@ -88,6 +90,9 @@ import { Prompt, usePromptStore } from "../store/prompt";
 import Locale from "../locales";
 
 import { IconButton } from "./button";
+import * as XLSX from "xlsx";
+import Draggable from "react-draggable";
+
 import styles from "./chat.module.scss";
 
 import {
@@ -493,7 +498,7 @@ function useScrollToBottom(
 }
 
 export function ChatActions(props: {
-  uploadImage: () => void;
+  uploadFile: () => void;
   setAttachImages: (images: string[]) => void;
   setUploading: (uploading: boolean) => void;
   showPromptModal: () => void;
@@ -504,6 +509,8 @@ export function ChatActions(props: {
   setShowShortcutKeyModal: React.Dispatch<React.SetStateAction<boolean>>;
   setUserInput: (input: string) => void;
   setShowChatSidePanel: React.Dispatch<React.SetStateAction<boolean>>;
+  showKnowledgeBase: boolean;
+  setShowKnowledgeBase: (show: boolean) => void;
 }) {
   const config = useAppConfig();
   const navigate = useNavigate();
@@ -625,8 +632,8 @@ export function ChatActions(props: {
 
         {showUploadImage && (
           <ChatAction
-            onClick={props.uploadImage}
-            text={Locale.Chat.InputActions.UploadImage}
+            onClick={props.uploadFile}
+            text={Locale.Chat.InputActions.UploadFile}
             icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
           />
         )}
@@ -675,6 +682,11 @@ export function ChatActions(props: {
           }}
         />
 
+        <ChatAction
+          onClick={() => props.setShowKnowledgeBase(!props.showKnowledgeBase)}
+          text={`Knowledge (${session.knowledge?.length || 0})`}
+          icon={<BookIcon />}
+        />
         <ChatAction
           onClick={() => setShowModelSelector(true)}
           text={
@@ -1080,6 +1092,7 @@ function ChatContent() {
   const isMobileScreen = useMobileScreen();
   const navigate = useNavigate();
   const [attachImages, setAttachImages] = useState<string[]>([]);
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   // prompt hints
@@ -1600,49 +1613,146 @@ function ChatContent() {
     [attachImages, chatStore],
   );
 
-  async function uploadImage() {
-    const images: string[] = [];
-    images.push(...attachImages);
-
-    images.push(
-      ...(await new Promise<string[]>((res, rej) => {
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.accept =
-          "image/png, image/jpeg, image/webp, image/heic, image/heif";
-        fileInput.multiple = true;
-        fileInput.onchange = (event: any) => {
-          setUploading(true);
-          const files = event.target.files;
-          const imagesData: string[] = [];
-          for (let i = 0; i < files.length; i++) {
-            const file = event.target.files[i];
-            uploadImageRemote(file)
-              .then((dataUrl) => {
-                imagesData.push(dataUrl);
-                if (
-                  imagesData.length === 3 ||
-                  imagesData.length === files.length
-                ) {
-                  setUploading(false);
-                  res(imagesData);
-                }
-              })
-              .catch((e) => {
-                setUploading(false);
-                rej(e);
-              });
-          }
-        };
-        fileInput.click();
-      })),
-    );
-
-    const imagesLength = images.length;
-    if (imagesLength > 3) {
-      images.splice(3, imagesLength - 3);
+  // Extract text from PDF
+  async function extractPdfText(file: File): Promise<string> {
+    // Dynamic import to avoid SSR/Initial execution issues with pdfjs-dist v5+
+    const pdfjsLib = await import("pdfjs-dist");
+    // @ts-ignore
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      // @ts-ignore
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
     }
-    setAttachImages(images);
+
+    const reader = new FileReader();
+    return new Promise((resolve) => {
+      reader.onload = async (e) => {
+        const typedarray = new Uint8Array(e.target?.result as ArrayBuffer);
+        const loadingTask = pdfjsLib.getDocument(typedarray);
+        const pdf = await loadingTask.promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const textItems = textContent.items.map((item: any) => item.str);
+          fullText += textItems.join(" ") + "\n";
+        }
+        resolve(fullText);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  // Extract text from XLSX
+  async function extractXlsxText(file: File): Promise<string> {
+    const reader = new FileReader();
+    return new Promise((resolve) => {
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        let csv = "";
+        workbook.SheetNames.forEach((sheetName) => {
+          const sheet = workbook.Sheets[sheetName];
+          csv += `--- Sheet: ${sheetName} ---\n`;
+          csv += XLSX.utils.sheet_to_csv(sheet);
+          csv += "\n\n";
+        });
+        resolve(csv);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function uploadFile() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept =
+      "image/png, image/jpeg, image/webp, image/heic, image/heif, application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, video/mp4, video/quicktime";
+    fileInput.multiple = true;
+    fileInput.onchange = async (event: any) => {
+      setUploading(true);
+      const files = event.target.files;
+      const newFiles: string[] = [...attachImages];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith("image/")) {
+          const dataUrl = await uploadImageRemote(file);
+          newFiles.push(dataUrl);
+        } else if (file.type === "application/pdf") {
+          const text = await extractPdfText(file);
+          // For PDF, we add it as an attachment that will be converted back to text in the prompt
+          // We'll store it as 'application:pdf:<filename>:<text_content>'
+          newFiles.push(`application:pdf:${file.name}:${text}`);
+        } else if (
+          file.type ===
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ) {
+          const text = await extractXlsxText(file);
+          newFiles.push(`application:xlsx:${file.name}:${text}`);
+        } else if (file.type.startsWith("video/")) {
+          // Video support requires backend or Gemini direct upload
+          // For now, let's treat it similar to image if we can generate a thumbnail,
+          // but better if we send the video file directly if the model supports it.
+          // Since our uploadImageRemote might only support images, we'll just handle it as dataUrl for now.
+          const reader = new FileReader();
+          const videoDataUrl = await new Promise<string>((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+          newFiles.push(videoDataUrl);
+        }
+      }
+      setAttachImages(newFiles.slice(0, 5)); // Allow more than 3 now
+      setUploading(false);
+    };
+    fileInput.click();
+  }
+
+  async function uploadToKnowledge() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept =
+      "application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/plain, text/markdown";
+    fileInput.multiple = true;
+    fileInput.onchange = async (event: any) => {
+      setUploading(true);
+      const files = event.target.files;
+      const newKnowledge: any[] = [...(session.knowledge || [])];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        let text = "";
+        let type = file.type;
+        if (file.type === "application/pdf") {
+          text = await extractPdfText(file);
+          type = "pdf";
+        } else if (
+          file.type ===
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ) {
+          text = await extractXlsxText(file);
+          type = "xlsx";
+        } else if (file.type.startsWith("text/")) {
+          text = await file.text();
+          type = "text";
+        }
+
+        if (text) {
+          newKnowledge.push({
+            name: file.name,
+            content: text,
+            type: type,
+          });
+        }
+      }
+
+      chatStore.updateTargetSession(session, (session) => {
+        session.knowledge = newKnowledge;
+      });
+      setUploading(false);
+      setShowKnowledgeBase(true);
+    };
+    fileInput.click();
   }
 
   // 快捷键 shortcut keys
@@ -2127,7 +2237,7 @@ function ChatContent() {
               />
 
               <ChatActions
-                uploadImage={uploadImage}
+                uploadFile={uploadFile}
                 setAttachImages={setAttachImages}
                 setUploading={setUploading}
                 showPromptModal={() => setShowPromptModal(true)}
@@ -2148,6 +2258,8 @@ function ChatContent() {
                 setShowShortcutKeyModal={setShowShortcutKeyModal}
                 setUserInput={setUserInput}
                 setShowChatSidePanel={setShowChatSidePanel}
+                showKnowledgeBase={showKnowledgeBase}
+                setShowKnowledgeBase={setShowKnowledgeBase}
               />
               <label
                 className={clsx(styles["chat-input-panel-inner"], {
@@ -2177,12 +2289,40 @@ function ChatContent() {
                 {attachImages.length != 0 && (
                   <div className={styles["attach-images"]}>
                     {attachImages.map((image, index) => {
+                      const isPdf = image.startsWith("application:pdf:");
+                      const isXlsx = image.startsWith("application:xlsx:");
+                      const isVideo = image.startsWith("data:video/");
+                      let fileName = "";
+                      if (isPdf || isXlsx) {
+                        fileName = image.split(":")[2];
+                      }
+
                       return (
                         <div
                           key={index}
-                          className={styles["attach-image"]}
-                          style={{ backgroundImage: `url("${image}")` }}
+                          className={clsx(styles["attach-image"], {
+                            [styles["attach-file"]]: isPdf || isXlsx || isVideo,
+                          })}
+                          style={{
+                            backgroundImage:
+                              isPdf || isXlsx || isVideo
+                                ? "none"
+                                : `url("${image}")`,
+                          }}
                         >
+                          {(isPdf || isXlsx || isVideo) && (
+                            <div className={styles["attach-file-info"]}>
+                              <div className={styles["attach-file-icon"]}>
+                                {isPdf ? "📄" : isXlsx ? "📊" : "🎥"}
+                              </div>
+                              <div
+                                className={styles["attach-file-name"]}
+                                title={fileName}
+                              >
+                                {fileName || (isVideo ? "Video" : "File")}
+                              </div>
+                            </div>
+                          )}
                           <div className={styles["attach-image-mask"]}>
                             <DeleteImageButton
                               deleteImage={() => {
@@ -2236,6 +2376,64 @@ function ChatContent() {
             setIsEditingMessage(false);
           }}
         />
+      )}
+
+      {showKnowledgeBase && (
+        <Draggable handle={`.${styles["knowledge-header"]}`}>
+          <div className={styles["knowledge-panel"]}>
+            <div className={styles["knowledge-header"]}>
+              <div className={styles["knowledge-title"]}>
+                Knowledge Base (RAG)
+              </div>
+              <div className={styles["knowledge-actions"]}>
+                <IconButton
+                  icon={<AddIcon />}
+                  onClick={uploadToKnowledge}
+                  title="Add File"
+                />
+                <IconButton
+                  icon={<CloseIcon />}
+                  onClick={() => setShowKnowledgeBase(false)}
+                />
+              </div>
+            </div>
+            <div className={styles["knowledge-body"]}>
+              {(session.knowledge || []).length === 0 ? (
+                <div className={styles["knowledge-empty"]}>
+                  No files in knowledge base. Add PDF or XLSX for RAG.
+                </div>
+              ) : (
+                (session.knowledge || []).map((k, index) => (
+                  <div key={index} className={styles["knowledge-item"]}>
+                    <div className={styles["knowledge-item-icon"]}>
+                      {k.type === "pdf"
+                        ? "📄"
+                        : k.type === "xlsx"
+                          ? "📊"
+                          : "📝"}
+                    </div>
+                    <div
+                      className={styles["knowledge-item-name"]}
+                      title={k.name}
+                    >
+                      {k.name}
+                    </div>
+                    <IconButton
+                      icon={<DeleteIcon />}
+                      onClick={() => {
+                        chatStore.updateTargetSession(session, (session) => {
+                          session.knowledge = session.knowledge?.filter(
+                            (_, i) => i !== index,
+                          );
+                        });
+                      }}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </Draggable>
       )}
 
       {showShortcutKeyModal && (

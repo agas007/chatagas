@@ -499,6 +499,22 @@ export function Selector<T>(props: {
         : [],
   );
 
+  const [search, setSearch] = useState("");
+
+  const filteredItems = props.items
+    .filter(
+      (item) =>
+        item.title.toLowerCase().includes(search.toLowerCase()) ||
+        item.subTitle?.toLowerCase().includes(search.toLowerCase()),
+    )
+    .sort((a, b) => {
+      const aSelected = selectedValues.includes(a.value);
+      const bSelected = selectedValues.includes(b.value);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
+
   const handleSelection = (e: MouseEvent, value: T) => {
     if (props.multiple) {
       e.stopPropagation();
@@ -516,9 +532,23 @@ export function Selector<T>(props: {
 
   return (
     <div className={styles["selector"]} onClick={() => props.onClose?.()}>
-      <div className={styles["selector-content"]}>
+      <div
+        className={styles["selector-content"]}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles["selector-search"]}>
+          <input
+            type="text"
+            placeholder={
+              Locale.Chat.InputActions.SearchModels || "Search models..."
+            }
+            value={search}
+            onInput={(e) => setSearch(e.currentTarget.value)}
+            autoFocus
+          />
+        </div>
         <List>
-          {props.items.map((item, i) => {
+          {filteredItems.map((item, i) => {
             const selected = selectedValues.includes(item.value);
             return (
               <ListItem

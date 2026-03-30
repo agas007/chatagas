@@ -17,16 +17,59 @@
   background-size: cover;
   background-position: center;
   background-color: var(--white);
+  position: relative;
+  overflow: hidden;
+
+  &.attach-file {
+    background-color: var(--gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--primary);
+  }
+
+  .attach-file-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    padding: 4px;
+
+    .attach-file-icon {
+      font-size: 24px;
+    }
+
+    .attach-file-name {
+      font-size: 10px;
+      color: var(--black);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      opacity: 0.7;
+    }
+  }
 
   .attach-image-mask {
     width: 100%;
     height: 100%;
     opacity: 0;
     transition: all ease 0.2s;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
   }
 
-  .attach-image-mask:hover {
+  &:hover .attach-image-mask {
     opacity: 1;
+    pointer-events: all;
   }
 
   .delete-image {
@@ -37,8 +80,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 5px;
-    float: right;
     background-color: var(--white);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -761,6 +804,7 @@
   gap: 6px;
   cursor: pointer;
   transform: translate(-50%, -100%) translateY(-10px);
+  border: 1px solid var(--primary);
   animation: slide-in ease 0.2s;
   font-size: 12px;
   color: var(--black);
@@ -774,6 +818,98 @@
   svg {
     width: 14px;
     height: 14px;
+    fill: var(--primary);
   }
 }
+
+.knowledge-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 120px;
+  width: 350px;
+  max-height: 400px;
+  background: var(--white);
+  border: var(--border-in-light);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slide-in ease 0.3s;
+
+  .knowledge-header {
+    padding: 12px 16px;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    user-select: none;
+
+    .knowledge-title {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .knowledge-actions {
+      display: flex;
+      gap: 4px;
+      
+      button {
+        color: white;
+        background: rgba(255, 255, 255, 0.2);
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
+    }
+  }
+
+  .knowledge-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background: var(--bg-light);
+
+    .knowledge-empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+    }
+
+    .knowledge-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--white);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: var(--primary);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      }
+
+      .knowledge-item-icon {
+        margin-right: 12px;
+        font-size: 18px;
+      }
+
+      .knowledge-item-name {
+        flex: 1;
+        font-size: 13px;
+        color: var(--black);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+}
+
 

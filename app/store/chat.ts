@@ -87,6 +87,7 @@ export interface ChatSession {
 
   memoryPrompt: string;
   messages: ChatMessage[];
+  knowledge?: { name: string; content: string; type: string }[];
   stat: ChatStat;
   lastUpdate: number;
   lastSummarizeIndex: number;
@@ -115,6 +116,7 @@ function createEmptySession(): ChatSession {
     topic: DEFAULT_TOPIC,
     memoryPrompt: "",
     messages: [],
+    knowledge: [],
     stat: {
       tokenCount: 0,
       wordCount: 0,
@@ -530,12 +532,39 @@ export const useChatStore = createPersistStore(
           : fillTemplateWith(content, modelConfig);
 
         if (!isMcpResponse && attachImages && attachImages.length > 0) {
+          const fileParts: MultimodalContent[] = [];
+          let textPrefix = "";
+
+          attachImages.forEach((url) => {
+            if (
+              url.startsWith("application:pdf:") ||
+              url.startsWith("application:xlsx:")
+            ) {
+              const parts = url.split(":");
+              const type = parts[1];
+              const fileName = parts[2];
+              const fileContent = parts.slice(3).join(":");
+              textPrefix += `\n\n[File Attached: ${fileName} (${type})]\n${fileContent}\n[End of File: ${fileName}]\n\n`;
+            } else if (url.startsWith("data:video/")) {
+              // Video support for Gemini etc
+              fileParts.push({
+                type: "image_url" as const, // We'll re-use image_url type or extend it in api.ts
+                image_url: { url },
+              });
+            } else {
+              fileParts.push({
+                type: "image_url" as const,
+                image_url: { url },
+              });
+            }
+          });
+
+          const finalContent = textPrefix + content;
           mContent = [
-            ...(content ? [{ type: "text" as const, text: content }] : []),
-            ...attachImages.map((url) => ({
-              type: "image_url" as const,
-              image_url: { url },
-            })),
+            ...(finalContent
+              ? [{ type: "text" as const, text: finalContent }]
+              : []),
+            ...fileParts,
           ];
         }
 
@@ -553,7 +582,39 @@ export const useChatStore = createPersistStore(
 
         // get recent messages
         const recentMessages = await get().getMessagesWithMemory();
-        const sendMessages = recentMessages.concat(userMessage);
+
+        // Add session knowledge for RAG
+        const sessionKnowledge = session.knowledge || [];
+        let knowledgePrefix = "";
+        if (sessionKnowledge.length > 0) {
+          knowledgePrefix = `\n\n[KNOWLEDGE BASE]\n${sessionKnowledge.map((k) => `File: ${k.name}\nContext: ${k.content}`).join("\n---\n")}\n[END OF KNOWLEDGE BASE]\n\n`;
+        }
+
+        const sendMessages = recentMessages
+          .concat(userMessage)
+          .map((m) => ({ ...m }));
+
+        // Inject knowledge base content ONLY to the messages being sent to API
+        // to avoid bloating the history stored in session.messages
+        if (knowledgePrefix && sendMessages.length > 0) {
+          const lastMessage = sendMessages[sendMessages.length - 1];
+          if (typeof lastMessage.content === "string") {
+            lastMessage.content = knowledgePrefix + lastMessage.content;
+          } else {
+            // Deep clone content if it's an array for multimodal
+            const contentArray = Array.from(lastMessage.content as any[]).map(
+              (p) => ({ ...p }),
+            ) as any[];
+            const textPart = contentArray.find((p) => p.type === "text");
+            if (textPart) {
+              textPart.text = knowledgePrefix + textPart.text;
+            } else {
+              contentArray.unshift({ type: "text", text: knowledgePrefix });
+            }
+            lastMessage.content = contentArray as any;
+          }
+        }
+
         const messageIndex = session.messages.length + 1;
 
         // save user's message
