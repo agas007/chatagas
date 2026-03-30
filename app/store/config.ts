@@ -106,6 +106,7 @@ export const DEFAULT_CONFIG = {
     temperature: 0.9,
     voice: "alloy" as Voice,
   },
+  announcementVersion: "",
 };
 
 export type ChatConfig = typeof DEFAULT_CONFIG;
@@ -200,7 +201,7 @@ export const useAppConfig = createPersistStore(
   }),
   {
     name: StoreKey.Config,
-    version: 4.2,
+    version: 4.3,
 
     merge(persistedState, currentState) {
       const state = persistedState as ChatConfig | undefined;
@@ -260,9 +261,8 @@ export const useAppConfig = createPersistStore(
           DEFAULT_CONFIG.modelConfig.compressProviderName;
       }
 
-      if (version < 4.2) {
-        state.modelConfig.maxContextTokens =
-          DEFAULT_CONFIG.modelConfig.maxContextTokens;
+      if (version < 4.3) {
+        state.announcementVersion = "";
       }
 
       return state as any;

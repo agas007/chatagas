@@ -30,6 +30,8 @@ import { type ClientApi, getClientApi } from "../client/api";
 import { useAccessStore } from "../store";
 import clsx from "clsx";
 import { initializeMcpSystem, isMcpEnabled } from "../mcp/actions";
+import { AnnouncementModal } from "./announcement";
+import { VERSION } from "../version";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -128,7 +130,9 @@ const useHasHydrated = () => {
   const [hasHydrated, setHasHydrated] = useState<boolean>(false);
 
   useEffect(() => {
-    setHasHydrated(true);
+    setTimeout(() => {
+      setHasHydrated(true);
+    }, 0);
   }, []);
 
   return hasHydrated;
@@ -239,6 +243,17 @@ export function Home() {
   useLoadData();
   useHtmlLang();
 
+  const config = useAppConfig();
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+
+  useEffect(() => {
+    if (config.announcementVersion !== VERSION) {
+      setTimeout(() => {
+        setShowAnnouncement(true);
+      }, 0);
+    }
+  }, [config.announcementVersion]);
+
   useEffect(() => {
     console.log("[Config] got config from build time", getClientConfig());
     useAccessStore.getState().fetch();
@@ -267,6 +282,14 @@ export function Home() {
       <Router>
         <Screen />
       </Router>
+      {showAnnouncement && (
+        <AnnouncementModal
+          onClose={() => {
+            setShowAnnouncement(false);
+            config.update((config) => (config.announcementVersion = VERSION));
+          }}
+        />
+      )}
     </ErrorBoundary>
   );
 }
