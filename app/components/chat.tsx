@@ -1038,6 +1038,35 @@ function ChatContent() {
     return topDistance < 100;
   }, []);
 
+  const [selectionPosition, setSelectionPosition] = useState<{
+    left: number;
+    top: number;
+    content: string;
+  } | null>(null);
+
+  const onSelectionChange = () => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect.width > 0) {
+        setSelectionPosition({
+          left: rect.left + rect.width / 2,
+          top: rect.top,
+          content: selection.toString(),
+        });
+      }
+    } else {
+      setSelectionPosition(null);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () =>
+      document.removeEventListener("selectionchange", onSelectionChange);
+  }, []);
+
   const isTyping = userInput !== "";
 
   // if user is typing, should auto scroll to bottom
@@ -2211,6 +2240,32 @@ function ChatContent() {
 
       {showShortcutKeyModal && (
         <ShortcutKeyModal onClose={() => setShowShortcutKeyModal(false)} />
+      )}
+
+      {selectionPosition && (
+        <div
+          className={styles["selection-overlay"]}
+          style={{
+            left: selectionPosition.left,
+            top: selectionPosition.top,
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const quoteText = `> ${selectionPosition.content
+              .split("\n")
+              .join("\n> ")}\n\n`;
+            setUserInput((prev) =>
+              prev ? prev + "\n\n" + quoteText : quoteText,
+            );
+            inputRef.current?.focus();
+            setSelectionPosition(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+        >
+          <ReplyIcon />
+          <span>Reply</span>
+        </div>
       )}
     </>
   );

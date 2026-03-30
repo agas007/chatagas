@@ -25,6 +25,7 @@ import {
   Path,
   REPO_URL,
 } from "../constant";
+import { VERSION } from "../version";
 
 import { Link, useNavigate } from "react-router-dom";
 import { isIOS, useMobileScreen } from "../utils";
@@ -251,7 +252,7 @@ export function SideBar(props: { className?: string }) {
     >
       <SideBarHeader
         title="Agas Chat AI"
-        subTitle="Your personal AI assistant."
+        subTitle={`Your personal AI assistant. v${VERSION}`}
         logo={<ChatGptIcon />}
         shouldNarrow={shouldNarrow}
       >

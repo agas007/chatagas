@@ -745,8 +745,35 @@
     z-index: 10;
     transform: translateX(100%);
     transition: all ease 0.3s;
-    &-show {
-      transform: translateX(0);
-    }
   }
 }
+
+.selection-overlay {
+  position: fixed;
+  z-index: 9999;
+  background-color: var(--white);
+  border: var(--border-in-light);
+  box-shadow: var(--card-shadow);
+  border-radius: 8px;
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transform: translate(-50%, -100%) translateY(-10px);
+  animation: slide-in ease 0.2s;
+  font-size: 12px;
+  color: var(--black);
+  user-select: none;
+  font-weight: bold;
+
+  &:hover {
+    background-color: var(--gray);
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
