@@ -12,6 +12,7 @@ import React, {
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
 import RenameIcon from "../icons/rename.svg";
+import ReplyIcon from "../icons/chat.svg";
 import EditIcon from "../icons/rename.svg";
 import ExportIcon from "../icons/share.svg";
 import ReturnIcon from "../icons/return.svg";
@@ -1930,6 +1931,30 @@ function ChatContent() {
                                             getMessageTextContent(message),
                                           )
                                         }
+                                      />
+                                      <ChatAction
+                                        text={"Reply"}
+                                        icon={<ReplyIcon />}
+                                        onClick={() => {
+                                          let quote =
+                                            getMessageTextContent(message);
+                                          const selection = window
+                                            .getSelection()
+                                            ?.toString();
+                                          if (
+                                            selection &&
+                                            quote.includes(selection)
+                                          ) {
+                                            quote = selection;
+                                          }
+                                          const quoteText = `> ${quote.split("\n").join("\n> ")}\n\n`;
+                                          setUserInput((prev) =>
+                                            prev
+                                              ? prev + "\n\n" + quoteText
+                                              : quoteText,
+                                          );
+                                          inputRef.current?.focus();
+                                        }}
                                       />
                                       <ChatAction
                                         text={"Fork"}
