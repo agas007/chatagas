@@ -8,6 +8,7 @@ import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
 # Chatagas Release v1.2.0 🎙️
+*Rilis: 31 Maret 2026 (WIB)*
 
 Selamat datang di v1.2.0! Fokus kali ini adalah lokalisasi Indonesia penuh dan fitur **Speech-to-Text Gratis**.
 
@@ -32,6 +33,7 @@ Selamat datang di v1.2.0! Fokus kali ini adalah lokalisasi Indonesia penuh dan f
 ---
 
 # Chatagas Release v1.1.0 🚀
+*Rilis: 30 Maret 2026 (WIB)*
 
 Versi v1.1.0 resmi dirilis! Versi ini membawa fitur **RAG (Retrieval Augmented Generation)** dan dukungan media yang sangat powerful.
 
@@ -54,6 +56,7 @@ Support analisis file video untuk model yang mendukung multimodal (seperti Gemin
 ---
 
 # Chatagas Release v1.0.0 🚀
+*Rilis: 29 Maret 2026 (WIB)*
 
 ### ⚡️ Parallel Multi-Model Chat
 Bandingkan jawaban dari beberapa model AI sekaligus secara instan!
