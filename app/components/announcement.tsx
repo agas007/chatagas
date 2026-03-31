@@ -6,6 +6,28 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
+# Chatagas Release v1.3.0 📡
+*Rilis: 31 Maret 2026 (WIB)*
+
+Selamat datang di v1.3.0! Versi ini membawa perbaikan stabilitas besar pada sistem pemrosesan dokumen dan penambahan masker spesialis baru.
+
+### 🏛️ Pakar Tata Kelola & Birokrasi
+- Masker baru untuk membantu Anda menavigasi aturan pemerintahan yang kompleks.
+- Strategi interaksi pejabat dan pencarian opsi **win-win solution** yang taktis.
+
+### 📁 Enhanced File Context Support
+- **Universal Upload Button**: Tombol upload berkas kini muncul di semua model (tidak hanya vision).
+- **Direct Txt & Markdown**: Dukungan penuh untuk upload file teks (`
+  .txt`) dan Markdown (`.md`) langsung sebagai konteks obrolan.
+- **Peningkatan Kapasitas**: Unggah hingga 5 berkas sekaligus untuk konteks yang lebih kaya.
+
+### 🛠️ Perbaikan & Bug Fixes (Stability)
+- **Fix PDF Extraction**: Perbaikan total error *TypeError* saat memproses PDF dengan sistem *isolated utility* dan *local worker*.
+- **Sync Locale**: Pembersihan total sisa-sisa bahasa yang tidak didukung untuk mempercepat waktu build.
+- Penyesuaian ikon tombol unggah berkas agar lebih intuitif.
+
+---
+
 # Chatagas Release v1.2.0 🎙️
 *Rilis: 31 Maret 2026 (WIB)*
 

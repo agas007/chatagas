@@ -499,6 +499,7 @@ function useScrollToBottom(
 
 export function ChatActions(props: {
   uploadFile: () => void;
+  attachImages: string[];
   setAttachImages: (images: string[]) => void;
   setUploading: (uploading: boolean) => void;
   showPromptModal: () => void;
@@ -578,11 +579,13 @@ export function ChatActions(props: {
   const isMobileScreen = useMobileScreen();
 
   useEffect(() => {
-    const show = isVisionModel(currentModel);
-    setShowUploadImage(show);
-    if (!show) {
-      props.setAttachImages([]);
-      props.setUploading(false);
+    setShowUploadImage(true);
+    if (!isVisionModel(currentModel)) {
+      props.setAttachImages(
+        props.attachImages.filter(
+          (url: string) => !url.startsWith("data:image/"),
+        ),
+      );
     }
 
     // if current model is not available
@@ -1677,31 +1680,8 @@ function ChatContent() {
 
   // Extract text from PDF
   async function extractPdfText(file: File): Promise<string> {
-    // Dynamic import to avoid SSR/Initial execution issues with pdfjs-dist v5+
-    const pdfjsLib = await import("pdfjs-dist");
-    // @ts-ignore
-    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      // @ts-ignore
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-    }
-
-    const reader = new FileReader();
-    return new Promise((resolve) => {
-      reader.onload = async (e) => {
-        const typedarray = new Uint8Array(e.target?.result as ArrayBuffer);
-        const loadingTask = pdfjsLib.getDocument(typedarray);
-        const pdf = await loadingTask.promise;
-        let fullText = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const textItems = textContent.items.map((item: any) => item.str);
-          fullText += textItems.join(" ") + "\n";
-        }
-        resolve(fullText);
-      };
-      reader.readAsArrayBuffer(file);
-    });
+    const { extractPdfText: extract } = await import("../utils/pdf");
+    return extract(file);
   }
 
   // Extract text from XLSX
@@ -1728,7 +1708,7 @@ function ChatContent() {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept =
-      "image/png, image/jpeg, image/webp, image/heic, image/heif, application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, video/mp4, video/quicktime";
+      "image/png, image/jpeg, image/webp, image/heic, image/heif, application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, video/mp4, video/quicktime, text/plain, text/markdown, .txt, .md";
     fileInput.multiple = true;
     fileInput.onchange = async (event: any) => {
       setUploading(true);
@@ -1752,16 +1732,20 @@ function ChatContent() {
           const text = await extractXlsxText(file);
           newFiles.push(`application:xlsx:${file.name}:${text}`);
         } else if (file.type.startsWith("video/")) {
-          // Video support requires backend or Gemini direct upload
-          // For now, let's treat it similar to image if we can generate a thumbnail,
-          // but better if we send the video file directly if the model supports it.
-          // Since our uploadImageRemote might only support images, we'll just handle it as dataUrl for now.
+          // Video support for Gemini etc
           const reader = new FileReader();
           const videoDataUrl = await new Promise<string>((resolve) => {
             reader.onload = () => resolve(reader.result as string);
             reader.readAsDataURL(file);
           });
           newFiles.push(videoDataUrl);
+        } else if (
+          file.type.startsWith("text/") ||
+          file.name.endsWith(".txt") ||
+          file.name.endsWith(".md")
+        ) {
+          const text = await file.text();
+          newFiles.push(`application:text:${file.name}:${text}`);
         }
       }
       setAttachImages(newFiles.slice(0, 5)); // Allow more than 3 now
@@ -2300,6 +2284,7 @@ function ChatContent() {
 
               <ChatActions
                 uploadFile={uploadFile}
+                attachImages={attachImages}
                 setAttachImages={setAttachImages}
                 setUploading={setUploading}
                 showPromptModal={() => setShowPromptModal(true)}

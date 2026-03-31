@@ -33,6 +33,7 @@ const nextConfig = {
   experimental: {
     forceSwcTransforms: true,
   },
+  transpilePackages: ["pdfjs-dist"],
 };
 
 const CorsHeaders = [

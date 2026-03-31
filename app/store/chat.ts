@@ -538,7 +538,8 @@ export const useChatStore = createPersistStore(
           attachImages.forEach((url) => {
             if (
               url.startsWith("application:pdf:") ||
-              url.startsWith("application:xlsx:")
+              url.startsWith("application:xlsx:") ||
+              url.startsWith("application:text:")
             ) {
               const parts = url.split(":");
               const type = parts[1];
