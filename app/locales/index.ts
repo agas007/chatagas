@@ -123,13 +123,8 @@ export function changeLang(lang: Lang) {
 }
 
 export function getISOLang() {
-  const isoLangString: Record<string, string> = {
-    cn: "zh-Hans",
-    tw: "zh-Hant",
-  };
-
   const lang = getLang();
-  return isoLangString[lang] ?? lang;
+  return lang;
 }
 
 const DEFAULT_STT_LANG = "id-ID";
