@@ -17,8 +17,7 @@ Selamat datang di v1.3.0! Versi ini membawa perbaikan stabilitas besar pada sist
 
 ### 📁 Enhanced File Context Support
 - **Universal Upload Button**: Tombol upload berkas kini muncul di semua model (tidak hanya vision).
-- **Direct Txt & Markdown**: Dukungan penuh untuk upload file teks (`
-  .txt`) dan Markdown (`.md`) langsung sebagai konteks obrolan.
+- **Direct Txt & Markdown**: Dukungan penuh untuk upload file teks (\`.txt\`) dan Markdown (\`.md\`) langsung sebagai konteks obrolan.
 - **Peningkatan Kapasitas**: Unggah hingga 5 berkas sekaligus untuk konteks yang lebih kaya.
 
 ### 🛠️ Perbaikan & Bug Fixes (Stability)
