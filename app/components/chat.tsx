@@ -1343,6 +1343,68 @@ function ChatContent() {
       },
     });
   };
+  const [isRecording, setIsRecording] = useState(false);
+  const recorderRef = useRef<any>(null);
+
+  const onRecord = () => {
+    if (isRecording) {
+      if (recorderRef.current) {
+        recorderRef.current.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      showToast("Browser Anda tidak mendukung Speech Recognition.");
+      return;
+    }
+
+    const startText = userInput;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "id-ID";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      showToast(Locale.Chat.StartSpeak);
+    };
+
+    recognition.onresult = (event: any) => {
+      let currentSessionTranscript = "";
+
+      for (let i = 0; i < event.results.length; ++i) {
+        currentSessionTranscript += event.results[i][0].transcript;
+      }
+
+      // Append new transcripts to original startText
+      const newText = startText
+        ? startText +
+          (startText.endsWith(" ") ? "" : " ") +
+          currentSessionTranscript
+        : currentSessionTranscript;
+
+      onInput(newText);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech Recognition Error", event.error);
+      setIsRecording(false);
+      showToast("Error: " + event.error);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+    recorderRef.current = recognition;
+  };
 
   const accessStore = useAccessStore();
   const [speechStatus, setSpeechStatus] = useState(false);
@@ -2343,6 +2405,16 @@ function ChatContent() {
                   className={styles["chat-input-send"]}
                   type="primary"
                   onClick={() => doSubmit(userInput)}
+                />
+                <IconButton
+                  icon={isRecording ? <LoadingIcon /> : <HeadphoneIcon />}
+                  text={
+                    isRecording ? Locale.Chat.StopSpeak : Locale.Chat.StartSpeak
+                  }
+                  className={clsx(styles["chat-input-record"], {
+                    [styles["recording"]]: isRecording,
+                  })}
+                  onClick={onRecord}
                 />
               </label>
             </div>

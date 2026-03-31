@@ -26,21 +26,21 @@ if (typeof window != "undefined") {
   fetch("/masks.json")
     .then((res) => {
       if (!res.ok) {
-        return { cn: [], tw: [], en: [] };
+        return { id: [], en: [] };
       }
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        return { cn: [], tw: [], en: [] };
+        return { id: [], en: [] };
       }
-      return res.json().catch(() => ({ cn: [], tw: [], en: [] }));
+      return res.json().catch(() => ({ id: [], en: [] }));
     })
     .catch((error) => {
       console.debug("[Fetch] failed to fetch masks", error);
-      return { cn: [], tw: [], en: [] };
+      return { id: [], en: [] };
     })
     .then((masks) => {
-      const { cn = [], tw = [], en = [] } = masks;
-      return [...cn, ...tw, ...en].map((m) => {
+      const { id = [], en = [] } = masks;
+      return [...id, ...en].map((m) => {
         BUILTIN_MASKS.push(BUILTIN_MASK_STORE.add(m));
       });
     });

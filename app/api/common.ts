@@ -88,11 +88,13 @@ export async function requestOpenai(req: NextRequest) {
     }
   }
 
+  const contentType = req.headers.get("Content-Type") ?? "";
+  const isForm = contentType.includes("multipart/form-data");
+
   const fetchUrl = cloudflareAIGatewayUrl(`${baseUrl}/${path}`);
   console.log("fetchUrl", fetchUrl);
   const fetchOptions: RequestInit = {
     headers: {
-      "Content-Type": "application/json",
       "Cache-Control": "no-store",
       [authHeaderName]: authValue,
       ...(serverConfig.openaiOrgId && {
@@ -110,8 +112,12 @@ export async function requestOpenai(req: NextRequest) {
     signal: controller.signal,
   };
 
+  if (!isForm) {
+    (fetchOptions.headers as any)["Content-Type"] = "application/json";
+  }
+
   // #1815 try to refuse gpt4 request
-  if (serverConfig.customModels && req.body) {
+  if (serverConfig.customModels && req.body && !isForm) {
     try {
       const clonedBody = await req.text();
       fetchOptions.body = clonedBody;

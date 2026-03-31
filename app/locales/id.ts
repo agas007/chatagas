@@ -88,6 +88,8 @@ const id: PartialLocaleType = {
       return inputHints + "，/ untuk melengkapi, : untuk memicu perintah";
     },
     Send: "Kirim",
+    StartSpeak: "Mulai Rekam Suara",
+    StopSpeak: "Hentikan Rekam Suara",
     Config: {
       Reset: "Hapus Memori",
       SaveAs: "Simpan sebagai Masker",

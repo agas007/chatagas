@@ -1,11 +1,10 @@
 import { getClientConfig } from "../config/client";
 import { SubmitKey } from "../store/config";
-import { LocaleType } from "./index";
 import { SAAS_CHAT_UTM_URL } from "@/app/constant";
 // if you are adding a new translation, please use PartialLocaleType instead of LocaleType
 
 const isApp = !!getClientConfig()?.isApp;
-const en: LocaleType = {
+const en = {
   WIP: "Coming Soon...",
   Error: {
     Unauthorized: isApp

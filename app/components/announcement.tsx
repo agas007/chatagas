@@ -7,6 +7,30 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
+# Chatagas Release v1.2.0 🎙️
+
+Selamat datang di v1.2.0! Fokus kali ini adalah lokalisasi Indonesia penuh dan fitur **Speech-to-Text Gratis**.
+
+### 🇲🇨 Lokalisasi Indonesia Penuh
+- Semua tampilan kini mendukung Bahasa Indonesia.
+- Penghapusan total bahasa Mandarin/Taiwan untuk pengalaman yang lebih clean.
+
+### 🎙️ Free Browser STT (Voice to Text)
+- Gunakan fitur **Speech Recognition** langsung dari browser.
+- **Gratis Selamanya**: Tidak membutuhkan credit OpenAI/OpenRouter.
+- Proses transkripsi real-time dan langsung masuk ke kotak chat.
+
+### ⚖️ Mask Spesialis Baru (Indonesia)
+- **Pakar Pajak & Hukum**: Asisten khusus untuk regulasi pajak (UU HPP, PPh, PPN) dan hukum di Indonesia.
+- **Penerjemah Profesional**: Ahli terjemahan nuansa lokal.
+- **Penulis Konten**: Bantu bikin konten viral khas Indonesia.
+
+### 🛠️ Perbaikan & Bug Fixes
+- Perbaikan crash server proxy saat menangani data multipart/audio.
+- Penyesuaian tata letak (layout) tombol rekam suara di panel input.
+
+---
+
 # Chatagas Release v1.1.0 🚀
 
 Versi v1.1.0 resmi dirilis! Versi ini membawa fitur **RAG (Retrieval Augmented Generation)** dan dukungan media yang sangat powerful.
