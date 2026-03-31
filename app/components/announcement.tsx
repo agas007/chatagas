@@ -1,6 +1,5 @@
 import React from "react";
 import { Markdown } from "./markdown";
-import { VERSION } from "../version";
 import { useAppConfig } from "../store/config";
 import { IconButton } from "./button";
 import ConfirmIcon from "../icons/confirm.svg";
@@ -122,7 +121,7 @@ export function AnnouncementModal(props: { onClose: () => void }) {
             background: "var(--gray)",
           }}
         >
-          <h2 style={{ margin: 0 }}>What&apos;s New in v{VERSION}</h2>
+          <h2 style={{ margin: 0 }}>What&apos;s New</h2>
           <p style={{ margin: "10px 0 0", opacity: 0.6 }}>
             Terima kasih telah menggunakan Chatagas!
           </p>
