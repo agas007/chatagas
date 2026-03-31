@@ -8,10 +8,10 @@ import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import { getServerSideConfig } from "./config/server";
 
 export const metadata: Metadata = {
-  title: "NextChat",
-  description: "Your personal ChatGPT Chat Bot.",
+  title: "Chatagas",
+  description: "Asisten AI Pribadi Terpintar.",
   appleWebApp: {
-    title: "NextChat",
+    title: "Chatagas",
     statusBarStyle: "default",
   },
 };
@@ -43,7 +43,7 @@ export default function RootLayout({
         />
         <link
           rel="manifest"
-          href="/site.webmanifest"
+          href="/manifest.json"
           crossOrigin="use-credentials"
         ></link>
         <script src="/serviceWorkerRegister.js" defer></script>
