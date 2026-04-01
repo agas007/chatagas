@@ -6,6 +6,18 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
+# Chatagas Release v1.4.2 📈
+*Rilis: 1 April 2026 (WIB)*
+
+Versi ini membawa peningkatan pada fitur persona (Mask) untuk membantu performa trading Anda!
+
+### 📈 Pakar Trading & Analis Pasar (Persona Baru)
+- **Technical Analysis**: Menguasai puluhan indikator teknikal (RSI, MACD, EMA) untuk sinyal Entry & Exit.
+- **Trade Audit**: Bantu audit riwayat hasil trading Anda untuk merangkum pelajaran (lessons learned) dan perbaikan strategi.
+- **Precision Mode**: Konfigurasi GPT-4o untuk hasil analisa angka yang akurat dan tajam.
+
+---
+
 # Chatagas Release v1.4.1 📎
 *Rilis: 1 April 2026 (WIB)*
 
