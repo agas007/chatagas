@@ -6,6 +6,25 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
+# Chatagas Release v1.4.0 🔐
+*Rilis: 1 April 2026 (WIB)*
+
+Versi ini membawa perubahan fundamental pada sistem keamanan dan penyimpanan data Anda dengan integrasi **Cloud Synchronization**!
+
+### 👤 Cloud Authentication System
+Sekarang Anda bisa mendaftar dan masuk menggunakan email & password. Chatagas bukan lagi sekadar chat lokal; riwayat chat Anda kini aman tersimpan di database khusus untuk akun Anda.
+
+### 🔄 Multi-Device Cloud Sync
+Riwayat chat, profil, dan pengaturan Anda akan disinkronkan secara otomatis ke database online (Neon Postgres). Kirim chat dari laptop, lanjut baca dari gadget lain tanpa kehilangan data!
+
+### 💎 Desain Login Premium
+Halaman masuk baru dengan sentuhan *Glassmorphism* dan gradien warna futuristik, memberikan kesan profesional dan modern sejak pertama kali Anda masuk.
+
+### 📊 Account Status di Sidebar
+Pantau akun dan status sinkronisasi cloud Anda secara real-time langsung dari panel navigasi utama.
+
+---
+
 # Chatagas Release v1.3.0 📡
 *Rilis: 31 Maret 2026 (WIB)*
 
