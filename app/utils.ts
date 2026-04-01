@@ -234,20 +234,7 @@ export function isMacOS(): boolean {
 }
 
 export function getMessageTextContent(message: RequestMessage) {
-  if (typeof message.content === "string") {
-    return message.content;
-  }
-  for (const c of message.content) {
-    if (c.type === "text") {
-      return c.text ?? "";
-    }
-  }
-  return "";
-}
-
-export function getMessageTextContentWithoutThinking(message: RequestMessage) {
   let content = "";
-
   if (typeof message.content === "string") {
     content = message.content;
   } else {
@@ -258,6 +245,18 @@ export function getMessageTextContentWithoutThinking(message: RequestMessage) {
       }
     }
   }
+
+  // Filter out file content blocks for clean UI
+  return content
+    .replace(
+      /\n\n\[File Attached: [\s\S]*?\]\n[\s\S]*?\n\[End of File: [\s\S]*?\]\n\n/g,
+      "",
+    )
+    .trim();
+}
+
+export function getMessageTextContentWithoutThinking(message: RequestMessage) {
+  let content = getMessageTextContent(message);
 
   // Filter out thinking lines (starting with "> ")
   return content

@@ -63,6 +63,7 @@ export type ChatMessage = RequestMessage & {
   tools?: ChatMessageTool[];
   audio_url?: string;
   isMcpResponse?: boolean;
+  attachments?: string[]; // Lapiran file/gambar
 };
 
 export function createMessage(override: Partial<ChatMessage>): ChatMessage {
@@ -623,6 +624,7 @@ export const useChatStore = createPersistStore(
           const savedUserMessage = {
             ...userMessage,
             content: mContent,
+            attachments: attachImages, // Simpan lampiran secara eksplisit
           };
           session.messages = session.messages.concat([savedUserMessage]);
         });

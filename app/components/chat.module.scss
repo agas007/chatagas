@@ -941,3 +941,48 @@
 }
 
 
+
+.chat-message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.chat-message-attachment {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: var(--white);
+  border: var(--border-in-light);
+  border-radius: 8px;
+  max-width: 250px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    background-color: var(--gray);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+  }
+
+  .attachment-icon {
+    font-size: 18px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .attachment-name {
+    font-size: 11px;
+    color: var(--black);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+  }
+}

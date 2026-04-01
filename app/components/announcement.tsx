@@ -6,6 +6,18 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
+# Chatagas Release v1.4.1 📎
+*Rilis: 1 April 2026 (WIB)*
+
+Versi ini memfokuskan pada kenyamanan antarmuka saat Anda berinteraksi dengan banyak berkas!
+
+### 📎 Compact File Attachment UI
+- **File Cards**: Lampiran PDF, Excel, dan Teks kini tampil dalam bentuk kartu ikon yang ringkas.
+- **Anti-Clutter**: Isi teks file yang panjang tidak akan lagi memenuhi (banjir) gelembung chat, namun AI tetap dapat membacanya secara penuh di latar belakang.
+- **Premium Design**: Nikmati desain kartu lampiran yang elegan dengan efek hover yang halus dan responsif.
+
+---
+
 # Chatagas Release v1.4.0 🔐
 *Rilis: 1 April 2026 (WIB)*
 
