@@ -39,6 +39,10 @@ const DEFAULT_SYNC_STATE = {
     apiKey: "",
   },
 
+  localserver: {
+    enabled: true,
+  },
+
   lastSyncTime: 0,
   lastProvider: "",
 };
@@ -47,8 +51,12 @@ export const useSyncStore = createPersistStore(
   DEFAULT_SYNC_STATE,
   (set, get) => ({
     cloudSync() {
-      const config = get()[get().provider];
-      return Object.values(config).every((c) => c.toString().length > 0);
+      const provider = get().provider;
+      if (provider === ProviderType.LocalServer) return true;
+      const config = (get() as any)[provider];
+      return Object.values(config).every(
+        (c) => (c as any).toString().length > 0,
+      );
     },
 
     markSyncTime() {
@@ -91,20 +99,20 @@ export const useSyncStore = createPersistStore(
     async sync() {
       const localState = getLocalAppState();
       const provider = get().provider;
-      const config = get()[provider];
+      const config = (get() as any)[provider];
       const client = this.getClient();
 
       try {
-        const remoteState = await client.get(config.username);
+        const remoteState = await client.get(config?.username || "");
         if (!remoteState || remoteState === "") {
-          await client.set(config.username, JSON.stringify(localState));
+          await client.set(config?.username || "", JSON.stringify(localState));
           console.log(
             "[Sync] Remote state is empty, using local state instead.",
           );
           return;
         } else {
           const parsedRemoteState = JSON.parse(
-            await client.get(config.username),
+            await client.get(config?.username || ""),
           ) as AppState;
           mergeAppState(localState, parsedRemoteState);
           setLocalAppState(localState);
@@ -114,7 +122,7 @@ export const useSyncStore = createPersistStore(
         throw e;
       }
 
-      await client.set(config.username, JSON.stringify(localState));
+      await client.set(config?.username || "", JSON.stringify(localState));
 
       this.markSyncTime();
     },

@@ -32,6 +32,9 @@ import clsx from "clsx";
 import { initializeMcpSystem, isMcpEnabled } from "../mcp/actions";
 import { AnnouncementModal } from "./announcement";
 import { VERSION } from "../version";
+import { useSession } from "next-auth/react";
+import { useSyncStore } from "../store/sync";
+import { ProviderType } from "../utils/cloud";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -274,7 +277,23 @@ export function Home() {
     initMcp();
   }, []);
 
-  if (!useHasHydrated()) {
+  const { data: session, status } = useSession();
+  const syncStore = useSyncStore();
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      if (syncStore.provider !== ProviderType.LocalServer) {
+        syncStore.update((state) => {
+          state.provider = ProviderType.LocalServer;
+        });
+        // Initial sync when login
+        syncStore.sync();
+      }
+    }
+  }, [status, session, syncStore]);
+
+  const hasHydrated = useHasHydrated();
+  if (status === "loading" || !hasHydrated) {
     return <Loading />;
   }
 

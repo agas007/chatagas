@@ -51,13 +51,66 @@
 
   .sidebar-header-bar {
     display: flex;
+    flex-direction: column;
     margin-bottom: 20px;
+
+    .sidebar-account {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background-color: var(--white);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: var(--card-shadow);
+      width: 100%;
+      box-sizing: border-box;
+
+      .sidebar-account-info {
+        flex: 1;
+        overflow: hidden;
+        margin-right: 8px;
+
+        .sidebar-account-name {
+          font-size: 13px;
+          font-weight: bold;
+          color: var(--black);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .sidebar-account-status {
+          font-size: 10px;
+          color: var(--primary);
+          font-weight: 600;
+          margin-top: 2px;
+        }
+      }
+    }
+
+    .sidebar-account-guest {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+      width: 100%;
+
+      .sidebar-account-status-red {
+        font-size: 10px;
+        color: #e64a19;
+        font-weight: 600;
+        text-align: center;
+        opacity: 0.8;
+      }
+    }
 
     .sidebar-bar-button {
       flex-grow: 1;
+      width: 100%;
 
       &:not(:last-child) {
-        margin-right: 10px;
+        margin-bottom: 10px;
       }
     }
   }

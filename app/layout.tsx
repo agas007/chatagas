@@ -6,6 +6,7 @@ import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import { getServerSideConfig } from "./config/server";
+import { AuthProvider } from "./components/auth/provider";
 
 export const metadata: Metadata = {
   title: "Chatagas",
@@ -49,7 +50,7 @@ export default function RootLayout({
         <script src="/serviceWorkerRegister.js" defer></script>
       </head>
       <body suppressHydrationWarning>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
         {serverConfig?.isVercel && (
           <>
             <SpeedInsights />

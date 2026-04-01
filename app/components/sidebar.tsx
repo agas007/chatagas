@@ -26,6 +26,7 @@ import {
   REPO_URL,
 } from "../constant";
 import { VERSION } from "../version";
+import { useSession, signOut } from "next-auth/react";
 
 import { Link, useNavigate } from "react-router-dom";
 import { isIOS, useMobileScreen } from "../utils";
@@ -233,6 +234,7 @@ export function SideBar(props: { className?: string }) {
   const config = useAppConfig();
   const chatStore = useChatStore();
   const [mcpEnabled, setMcpEnabled] = useState(false);
+  const { data: session } = useSession();
 
   useEffect(() => {
     // 检查 MCP 是否启用
@@ -257,6 +259,43 @@ export function SideBar(props: { className?: string }) {
         shouldNarrow={shouldNarrow}
       >
         <div className={styles["sidebar-header-bar"]}>
+          {session ? (
+            <div className={styles["sidebar-account"]}>
+              <div className={styles["sidebar-account-info"]}>
+                <div className={styles["sidebar-account-name"]}>
+                  {session.user?.email}
+                </div>
+                <div className={styles["sidebar-account-status"]}>
+                  Cloud Sync Active
+                </div>
+              </div>
+              <IconButton
+                icon={<SettingsIcon />}
+                onClick={() => {
+                  if (confirm("Logout dari ChatAgas?")) {
+                    signOut();
+                  }
+                }}
+                shadow
+              />
+            </div>
+          ) : (
+            <div className={styles["sidebar-account-guest"]}>
+              <IconButton
+                icon={<ChatGptIcon />}
+                text="Login / Daftar"
+                type="primary"
+                onClick={() => {
+                  window.location.href = "/auth/signin";
+                }}
+                shadow
+              />
+              <div className={styles["sidebar-account-status-red"]}>
+                Mode Lokal (Data tidak tersimpan di Cloud)
+              </div>
+            </div>
+          )}
+          <div style={{ height: "10px" }} />
           <IconButton
             icon={<MaskIcon />}
             text={shouldNarrow ? undefined : Locale.Mask.Name}
