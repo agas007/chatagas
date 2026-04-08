@@ -694,7 +694,8 @@ export function ChatActions(props: {
           onClick={() => setShowModelSelector(true)}
           text={
             currentModelName +
-            ((session.mask.modelConfig as any).parallelModels?.length
+            (Array.isArray((session.mask.modelConfig as any).parallelModels) &&
+            (session.mask.modelConfig as any).parallelModels.length
               ? ` (+${(session.mask.modelConfig as any).parallelModels.length})`
               : "")
           }
@@ -706,7 +707,11 @@ export function ChatActions(props: {
             multiple={true}
             defaultSelectedValue={[
               `${currentModel}@${currentProviderName}`,
-              ...((session.mask.modelConfig as any).parallelModels || []),
+              ...(Array.isArray(
+                (session.mask.modelConfig as any).parallelModels,
+              )
+                ? (session.mask.modelConfig as any).parallelModels
+                : []),
             ]}
             items={models.map((m) => ({
               title: `${m.displayName}${
@@ -2220,7 +2225,7 @@ function ChatContent() {
                               parentRef={scrollRef}
                               defaultShow={i >= messages.length - 6}
                             />
-                            
+
                             {/* Render Images */}
                             {getMessageImages(message).length == 1 && (
                               /* eslint-disable-next-line @next/next/no-img-element */
@@ -2261,48 +2266,80 @@ function ChatContent() {
                             )}
 
                             {/* Render File Attachments (Card View) */}
-                            {message.attachments && message.attachments.length > 0 && (
-                              <div className={styles["chat-message-attachments"]}>
-                                {message.attachments.map((url, index) => {
-                                  if (url.startsWith("data:image/")) return null;
-                                  
-                                  const isPdf = url.startsWith("application:pdf:");
-                                  const isXlsx = url.startsWith("application:xlsx:");
-                                  const isText = url.startsWith("application:text:");
-                                  const isVideo = url.startsWith("data:video/");
-                                  
-                                  if (!isPdf && !isXlsx && !isText && !isVideo) return null;
+                            {message.attachments &&
+                              message.attachments.length > 0 && (
+                                <div
+                                  className={styles["chat-message-attachments"]}
+                                >
+                                  {message.attachments.map((url, index) => {
+                                    if (url.startsWith("data:image/"))
+                                      return null;
 
-                                  let fileName = "File";
-                                  if (isPdf || isXlsx || isText) {
-                                    fileName = url.split(":")[2] || "Unknown File";
-                                  }
+                                    const isPdf =
+                                      url.startsWith("application:pdf:");
+                                    const isXlsx =
+                                      url.startsWith("application:xlsx:");
+                                    const isText =
+                                      url.startsWith("application:text:");
+                                    const isVideo =
+                                      url.startsWith("data:video/");
 
-                                  return (
-                                    <div 
-                                      key={index} 
-                                      className={styles["chat-message-attachment"]}
-                                      title={fileName}
-                                      onClick={() => {
-                                        if (isPdf || isXlsx || isText) {
-                                          const content = url.split(":").slice(3).join(":");
-                                          if (content) {
-                                            showToast("Konten file tersedia untuk AI.");
-                                          }
+                                    if (
+                                      !isPdf &&
+                                      !isXlsx &&
+                                      !isText &&
+                                      !isVideo
+                                    )
+                                      return null;
+
+                                    let fileName = "File";
+                                    if (isPdf || isXlsx || isText) {
+                                      fileName =
+                                        url.split(":")[2] || "Unknown File";
+                                    }
+
+                                    return (
+                                      <div
+                                        key={index}
+                                        className={
+                                          styles["chat-message-attachment"]
                                         }
-                                      }}
-                                    >
-                                      <div className={styles["attachment-icon"]}>
-                                        {isPdf ? "📄" : isXlsx ? "📊" : isVideo ? "🎥" : "📝"}
+                                        title={fileName}
+                                        onClick={() => {
+                                          if (isPdf || isXlsx || isText) {
+                                            const content = url
+                                              .split(":")
+                                              .slice(3)
+                                              .join(":");
+                                            if (content) {
+                                              showToast(
+                                                "Konten file tersedia untuk AI.",
+                                              );
+                                            }
+                                          }
+                                        }}
+                                      >
+                                        <div
+                                          className={styles["attachment-icon"]}
+                                        >
+                                          {isPdf
+                                            ? "📄"
+                                            : isXlsx
+                                              ? "📊"
+                                              : isVideo
+                                                ? "🎥"
+                                                : "📝"}
+                                        </div>
+                                        <div
+                                          className={styles["attachment-name"]}
+                                        >
+                                          {fileName}
+                                        </div>
                                       </div>
-                                      <div className={styles["attachment-name"]}>
-                                        {fileName}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
+                                    );
+                                  })}
+                                </div>
+                              )}
                           </div>
                           {message?.audio_url && (
                             <div className={styles["chat-message-audio"]}>

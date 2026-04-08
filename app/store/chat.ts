@@ -629,7 +629,10 @@ export const useChatStore = createPersistStore(
           session.messages = session.messages.concat([savedUserMessage]);
         });
 
-        const parallelModelsStr = (modelConfig as any).parallelModels || [];
+        const parallelModels = (modelConfig as any).parallelModels;
+        const parallelModelsStr = Array.isArray(parallelModels)
+          ? parallelModels
+          : [];
         const modelsToRun = [
           { model: modelConfig.model, providerName: modelConfig.providerName },
           ...parallelModelsStr.map((m: string) => {
