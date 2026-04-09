@@ -67,10 +67,10 @@ export class DeepSeekApi implements LLMApi {
     const messages: ChatOptions["messages"] = [];
     for (const v of options.messages) {
       if (v.role === "assistant") {
-        const content = getMessageTextContentWithoutThinking(v);
+        const content = getMessageTextContentWithoutThinking(v, true);
         messages.push({ role: v.role, content });
       } else {
-        const content = getMessageTextContent(v);
+        const content = getMessageTextContent(v, true);
         messages.push({ role: v.role, content });
       }
     }

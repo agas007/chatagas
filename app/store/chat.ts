@@ -164,7 +164,7 @@ function getSummarizeModel(
 
 function countMessages(msgs: ChatMessage[]) {
   return msgs.reduce(
-    (pre, cur) => pre + estimateTokenLength(getMessageTextContent(cur)),
+    (pre, cur) => pre + estimateTokenLength(getMessageTextContent(cur, true)),
     0,
   );
 }

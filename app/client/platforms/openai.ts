@@ -241,6 +241,7 @@ export class ChatGPTApi implements LLMApi {
     if (isDalle3) {
       const prompt = getMessageTextContent(
         options.messages.slice(-1)?.pop() as any,
+        true,
       );
       requestPayload = {
         model: options.config.model,
@@ -258,7 +259,7 @@ export class ChatGPTApi implements LLMApi {
       for (const v of options.messages) {
         const content = visionModel
           ? await preProcessImageContent(v.content)
-          : getMessageTextContent(v);
+          : getMessageTextContent(v, true);
         if (!(isO1OrO3 && v.role === "system"))
           messages.push({ role: v.role, content });
       }

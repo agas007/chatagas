@@ -233,7 +233,10 @@ export function isMacOS(): boolean {
   return false;
 }
 
-export function getMessageTextContent(message: RequestMessage) {
+export function getMessageTextContent(
+  message: RequestMessage,
+  keepFiles: boolean = false,
+) {
   let content = "";
   if (typeof message.content === "string") {
     content = message.content;
@@ -246,6 +249,10 @@ export function getMessageTextContent(message: RequestMessage) {
     }
   }
 
+  if (keepFiles) {
+    return content.trim();
+  }
+
   // Filter out file content blocks for clean UI
   return content
     .replace(
@@ -255,8 +262,11 @@ export function getMessageTextContent(message: RequestMessage) {
     .trim();
 }
 
-export function getMessageTextContentWithoutThinking(message: RequestMessage) {
-  let content = getMessageTextContent(message);
+export function getMessageTextContentWithoutThinking(
+  message: RequestMessage,
+  keepFiles: boolean = false,
+) {
+  let content = getMessageTextContent(message, keepFiles);
 
   // Filter out thinking lines (starting with "> ")
   return content

@@ -99,7 +99,7 @@ export class GeminiProApi implements LLMApi {
       _messages.push({ role: v.role, content });
     }
     const messages = _messages.map((v) => {
-      let parts: any[] = [{ text: getMessageTextContent(v) }];
+      let parts: any[] = [{ text: getMessageTextContent(v, true) }];
       if (isVisionModel(options.config.model)) {
         const images = getMessageImages(v);
         if (images.length > 0) {
