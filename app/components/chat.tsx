@@ -42,7 +42,6 @@ import AddIcon from "../icons/add.svg";
 import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
-import RobotIcon from "../icons/robot.svg";
 import SizeIcon from "../icons/size.svg";
 import QualityIcon from "../icons/hd.svg";
 import StyleIcon from "../icons/palette.svg";
@@ -100,6 +99,7 @@ import {
   ListItem,
   Modal,
   Selector,
+  Select,
   showConfirm,
   showPrompt,
   showToast,
@@ -690,68 +690,6 @@ export function ChatActions(props: {
           text={`Knowledge (${session.knowledge?.length || 0})`}
           icon={<BookIcon />}
         />
-        <ChatAction
-          onClick={() => setShowModelSelector(true)}
-          text={
-            currentModelName +
-            (Array.isArray((session.mask.modelConfig as any).parallelModels) &&
-            (session.mask.modelConfig as any).parallelModels.length
-              ? ` (+${(session.mask.modelConfig as any).parallelModels.length})`
-              : "")
-          }
-          icon={<RobotIcon />}
-        />
-
-        {showModelSelector && (
-          <Selector
-            multiple={true}
-            defaultSelectedValue={[
-              `${currentModel}@${currentProviderName}`,
-              ...(Array.isArray(
-                (session.mask.modelConfig as any).parallelModels,
-              )
-                ? (session.mask.modelConfig as any).parallelModels
-                : []),
-            ]}
-            items={models.map((m) => ({
-              title: `${m.displayName}${
-                m?.provider?.providerName
-                  ? " (" + m?.provider?.providerName + ")"
-                  : ""
-              }`,
-              value: `${m.name}@${m?.provider?.providerName}`,
-            }))}
-            onClose={() => setShowModelSelector(false)}
-            onSelection={(s) => {
-              if (s.length === 0) return;
-              chatStore.updateTargetSession(session, (session) => {
-                const [first, ...rest] = s;
-                const [model, providerName] = getModelProvider(first);
-                session.mask.modelConfig.model = model as ModelType;
-                session.mask.modelConfig.providerName =
-                  providerName as ServiceProvider;
-                (session.mask.modelConfig as any).parallelModels = rest;
-                session.mask.syncGlobalConfig = false;
-              });
-
-              if (s.length === 1) {
-                const [model, providerName] = getModelProvider(s[0]);
-                if (providerName == "ByteDance") {
-                  const selectedModel = models.find(
-                    (m) =>
-                      m.name == model &&
-                      m?.provider?.providerName == providerName,
-                  );
-                  showToast(selectedModel?.displayName ?? "");
-                } else {
-                  showToast(model);
-                }
-              } else {
-                showToast(`${s.length} Models Selected`);
-              }
-            }}
-          />
-        )}
 
         {supportsCustomSize(currentModel) && (
           <ChatAction
@@ -1030,6 +968,21 @@ function ChatContent() {
 
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
+  const allModels = useAllModels();
+  const models = useMemo(() => {
+    const filteredModels = allModels.filter((m) => m.available);
+    const defaultModel = filteredModels.find((m) => m.isDefault);
+
+    if (defaultModel) {
+      return [
+        defaultModel,
+        ...filteredModels.filter((m) => m !== defaultModel),
+      ];
+    } else {
+      return filteredModels;
+    }
+  }, [allModels]);
+
   const config = useAppConfig();
   const fontSize = config.fontSize;
   const fontFamily = config.fontFamily;
@@ -1920,6 +1873,42 @@ function ChatContent() {
             <div className="window-header-sub-title">
               {Locale.Chat.SubTitle(session.messages.length)}
             </div>
+            <div style={{ marginTop: "5px" }}>
+              <Select
+                value={`${session.mask.modelConfig.model}@${session.mask.modelConfig?.providerName || ServiceProvider.OpenAI}`}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const [model, providerName] = getModelProvider(val);
+                  chatStore.updateTargetSession(session, (s) => {
+                    s.mask.modelConfig.model = model as ModelType;
+                    s.mask.modelConfig.providerName =
+                      providerName as ServiceProvider;
+                    (s.mask.modelConfig as any).parallelModels = [];
+                    s.mask.syncGlobalConfig = false;
+
+                    if (providerName == "ByteDance") {
+                      const selectedModel = models.find(
+                        (m) =>
+                          m.name == model &&
+                          m?.provider?.providerName == providerName,
+                      );
+                      showToast(selectedModel?.displayName ?? "");
+                    } else {
+                      showToast(model);
+                    }
+                  });
+                }}
+              >
+                {models.map((m) => (
+                  <option
+                    key={`${m.name}@${m?.provider?.providerName}`}
+                    value={`${m.name}@${m?.provider?.providerName}`}
+                  >
+                    {`${m.displayName}${m?.provider?.providerName ? ` (${m?.provider?.providerName})` : ""}`}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
           <div className="window-actions">
             <div className="window-action-button">
@@ -2538,9 +2527,53 @@ function ChatContent() {
               </div>
             </div>
             <div className={styles["knowledge-body"]}>
+              <div className={styles["knowledge-section-title"]}>
+                Connect Integrations
+              </div>
+              <div className={styles["knowledge-integrations"]}>
+                <div
+                  className={styles["integration-button"]}
+                  onClick={uploadToKnowledge}
+                >
+                  <div className={styles["integration-icon"]}>📁</div>
+                  <div>Upload Files</div>
+                </div>
+                <div
+                  className={styles["integration-button"]}
+                  onClick={() => showToast("WIP: Notion Integration")}
+                >
+                  <div className={styles["integration-icon"]}>📝</div>
+                  <div>Notion</div>
+                </div>
+                <div
+                  className={styles["integration-button"]}
+                  onClick={() => showToast("WIP: Github Integration")}
+                >
+                  <div className={styles["integration-icon"]}>🐈</div>
+                  <div>Github</div>
+                </div>
+                <div
+                  className={styles["integration-button"]}
+                  onClick={() => showToast("WIP: Google Drive")}
+                >
+                  <div className={styles["integration-icon"]}>☁️</div>
+                  <div>Google Drive</div>
+                </div>
+                <div
+                  className={styles["integration-button"]}
+                  onClick={() => showToast("WIP: Website Scraper")}
+                >
+                  <div className={styles["integration-icon"]}>🌐</div>
+                  <div>Web Scraper</div>
+                </div>
+              </div>
+
+              <div className={styles["knowledge-section-title"]}>
+                Current Knowledge Base
+              </div>
               {(session.knowledge || []).length === 0 ? (
                 <div className={styles["knowledge-empty"]}>
-                  No files in knowledge base. Add PDF or XLSX for RAG.
+                  No active knowledge context for this session.
                 </div>
               ) : (
                 (session.knowledge || []).map((k, index) => (

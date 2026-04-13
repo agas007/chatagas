@@ -562,6 +562,14 @@ const en = {
       Title: "Summary Model",
       SubTitle: "Model used to compress history and generate title",
     },
+    PromptCache: {
+      Title: "Prompt Caching",
+      SubTitle: "Enable prompt caching to optimize tokens for supported models",
+    },
+    StreamControl: {
+      Title: "Stream Response Control",
+      SubTitle: "Enable or disable streaming responses from the model",
+    },
     Temperature: {
       Title: "Temperature",
       SubTitle: "A larger value makes the more random output",

@@ -666,7 +666,7 @@ export const useChatStore = createPersistStore(
               ...modelConfig,
               model: model as ModelType,
               providerName: providerName as ServiceProvider,
-              stream: true,
+              stream: modelConfig.enableStream !== false,
             },
             onUpdate(message) {
               botMessage.streaming = true;

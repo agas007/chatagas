@@ -50,6 +50,36 @@ export function ModelConfigList(props: {
         </Select>
       </ListItem>
       <ListItem
+        title={Locale.Settings.StreamControl.Title}
+        subTitle={Locale.Settings.StreamControl.SubTitle}
+      >
+        <input
+          aria-label={Locale.Settings.StreamControl.Title}
+          type="checkbox"
+          checked={props.modelConfig.enableStream !== false}
+          onChange={(e) =>
+            props.updateConfig(
+              (config) => (config.enableStream = e.currentTarget.checked),
+            )
+          }
+        ></input>
+      </ListItem>
+      <ListItem
+        title={Locale.Settings.PromptCache.Title}
+        subTitle={Locale.Settings.PromptCache.SubTitle}
+      >
+        <input
+          aria-label={Locale.Settings.PromptCache.Title}
+          type="checkbox"
+          checked={props.modelConfig.enablePromptCache}
+          onChange={(e) =>
+            props.updateConfig(
+              (config) => (config.enablePromptCache = e.currentTarget.checked),
+            )
+          }
+        ></input>
+      </ListItem>
+      <ListItem
         title={Locale.Settings.Temperature.Title}
         subTitle={Locale.Settings.Temperature.SubTitle}
       >
