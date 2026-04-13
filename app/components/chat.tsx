@@ -1926,17 +1926,9 @@ function ChatContent() {
                 onClick={() => {
                   if (isMobileScreen) navigate(Path.Home);
                   else {
-                    // Toggle sidebar logic - we need a way to communicate with home.tsx
-                    // For now, let's assume existence of a toggleSidebar in window or similar
-                    // or just use a local state that we can pass up if it were controlled.
-                    // Instead, let's just make it look right and we can wire it up.
-                    const sidebar = document.querySelector(
-                      ".home_sidebar__",
-                    ) as HTMLElement;
-                    if (sidebar) {
-                      sidebar.style.display =
-                        sidebar.style.display === "none" ? "flex" : "none";
-                    }
+                    config.update(
+                      (config) => (config.showSidebar = !config.showSidebar),
+                    );
                   }
                 }}
               />

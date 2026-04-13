@@ -195,11 +195,13 @@ function Screen() {
     if (isSdNew) return <Sd />;
     return (
       <>
-        <SideBar
-          className={clsx({
-            [styles["sidebar-show"]]: isHome,
-          })}
-        />
+        {config.showSidebar && (
+          <SideBar
+            className={clsx({
+              [styles["sidebar-show"]]: isHome,
+            })}
+          />
+        )}
         <WindowContent>
           <Routes>
             <Route path={Path.Home} element={<Chat />} />
@@ -222,6 +224,14 @@ function Screen() {
         [styles["tight-container"]]: shouldTightBorder,
         [styles["rtl-screen"]]: getLang() === "ar",
       })}
+      style={
+        {
+          "--sidebar-width":
+            config.showSidebar && !isMobileScreen
+              ? `${config.sidebarWidth}px`
+              : "0px",
+        } as React.CSSProperties
+      }
     >
       {renderContent()}
     </div>
