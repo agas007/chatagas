@@ -23,8 +23,6 @@ import LoadingIcon from "../icons/three-dots.svg";
 import LoadingButtonIcon from "../icons/loading.svg";
 import PromptIcon from "../icons/prompt.svg";
 import MaskIcon from "../icons/mask.svg";
-import MaxIcon from "../icons/max.svg";
-import MinIcon from "../icons/min.svg";
 import ResetIcon from "../icons/reload.svg";
 import ReloadIcon from "../icons/reload.svg";
 import BreakIcon from "../icons/break.svg";
@@ -1523,7 +1521,6 @@ function ChatContent() {
   const clientConfig = useMemo(() => getClientConfig(), []);
 
   const autoFocus = !isMobileScreen; // wont auto focus on mobile screen
-  const showMaxIcon = !isMobileScreen && !clientConfig?.isApp;
 
   useCommand({
     fill: setUserInput,
@@ -1759,6 +1756,40 @@ function ChatContent() {
     fileInput.click();
   }
 
+  async function scrapeWebsite() {
+    const url = window.prompt("Enter Website URL to scrape:");
+    if (!url) return;
+
+    try {
+      setUploading(true);
+      showToast("Scraping website: " + url);
+      const res = await fetch(
+        `/api/web-scraper?url=${encodeURIComponent(url)}`,
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch");
+      }
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      chatStore.updateTargetSession(session, (session) => {
+        const newKnowledge = [...(session.knowledge || [])];
+        newKnowledge.push({
+          name: data.title || url,
+          content: data.content,
+          type: "text",
+        });
+        session.knowledge = newKnowledge;
+      });
+      showToast("Website scraped inside Knowledge Base!");
+    } catch (err: any) {
+      showToast("Error scraping website: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   // 快捷键 shortcut keys
   const [showShortcutKeyModal, setShowShortcutKeyModal] = useState(false);
 
@@ -1943,21 +1974,6 @@ function ChatContent() {
                 }}
               />
             </div>
-            {showMaxIcon && (
-              <div className="window-action-button">
-                <IconButton
-                  icon={config.tightBorder ? <MinIcon /> : <MaxIcon />}
-                  bordered
-                  title={Locale.Chat.Actions.FullScreen}
-                  ariaLabel={Locale.Chat.Actions.FullScreen}
-                  onClick={() => {
-                    config.update(
-                      (config) => (config.tightBorder = !config.tightBorder),
-                    );
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           <PromptToast
@@ -2561,7 +2577,7 @@ function ChatContent() {
                 </div>
                 <div
                   className={styles["integration-button"]}
-                  onClick={() => showToast("WIP: Website Scraper")}
+                  onClick={scrapeWebsite}
                 >
                   <div className={styles["integration-icon"]}>🌐</div>
                   <div>Web Scraper</div>

@@ -1,0 +1,39 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Web Search Plugin (Google)",
+    "description": "Performs a realtime web search algorithm using Google to provide updated information from the internet.",
+    "version": "v1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    },
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/web-search": {
+      "get": {
+        "description": "Extract top search results snippets and URLs from the web for a given query keyword.",
+        "operationId": "searchWebLatestUpdates",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "The target search query. For example: 'Latest AI news 2026' or 'Weather in Tokyo'",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}

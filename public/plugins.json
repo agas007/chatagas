@@ -13,5 +13,10 @@
     "id": "duckduckgolite",
     "name": "DuckDuckGoLiteSearch",
     "schema": "https://ghp.ci/https://raw.githubusercontent.com/ChatGPTNextWeb/NextChat-Awesome-Plugins/main/plugins/duckduckgolite/openapi.json"
+  },
+  {
+    "id": "native-web-search",
+    "name": "Web Search (Google / Duckduckgo)",
+    "schema": "/search-openapi.json"
   }
 ]

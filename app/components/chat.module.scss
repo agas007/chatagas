@@ -481,13 +481,14 @@
   box-sizing: border-box;
   max-width: 100%;
   margin-top: 10px;
-  border-radius: 10px;
-  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 18px;
+  background-color: transparent;
   padding: 10px;
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.6;
   user-select: text;
   word-break: break-word;
-  border: var(--border-in-light);
+  border: none;
   position: relative;
   transition: all ease 0.3s;
 }
@@ -589,21 +590,28 @@
 
 .chat-message-user > .chat-message-container > .chat-message-item {
   background-color: var(--second);
+  padding: 14px 18px;
 
   &:hover {
     min-width: 0;
   }
 }
 
+.chat-message:not(.chat-message-user) > .chat-message-container > .chat-message-item {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .chat-input-panel {
   position: relative;
   width: 100%;
-  padding: 20px;
-  padding-top: 10px;
+  max-width: var(--message-max-width);
+  margin: 0 auto;
+  padding: 10px 20px 20px 20px;
   box-sizing: border-box;
   flex-direction: column;
-  border-top: var(--border-in-light);
-  box-shadow: var(--card-shadow);
+  border-top: none;
+  box-shadow: none;
 
   .chat-input-actions {
     .chat-input-action {
@@ -670,8 +678,10 @@
   cursor: text;
   display: flex;
   flex: 1;
-  border-radius: 10px;
+  border-radius: 26px;
   border: var(--border-in-light);
+  background-color: var(--white);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .chat-input-panel-inner-attach {
@@ -680,22 +690,23 @@
 
 .chat-input-panel-inner:has(.chat-input:focus) {
   border: 1px solid var(--primary);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .chat-input {
   height: 100%;
   width: 100%;
-  border-radius: 10px;
+  border-radius: 26px;
   border: none;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.03);
-  background-color: var(--white);
+  background-color: transparent;
   color: var(--black);
   font-family: inherit;
-  padding: 10px 90px 10px 14px;
+  font-size: 15px;
+  padding: 16px 90px 16px 20px;
   resize: none;
   outline: none;
   box-sizing: border-box;
-  min-height: 68px;
+  min-height: 54px;
 }
 
 
