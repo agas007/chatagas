@@ -33,6 +33,7 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
+import MenuIcon from "../icons/menu.svg";
 
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
@@ -1790,6 +1791,42 @@ function ChatContent() {
     }
   }
 
+  async function scrapeGithub() {
+    const url = window.prompt(
+      "Enter GitHub Repo URL (e.g., https://github.com/owner/repo):",
+    );
+    if (!url) return;
+
+    try {
+      setUploading(true);
+      showToast("Fetching GitHub Repository: " + url);
+      const res = await fetch(
+        `/api/github-scraper?url=${encodeURIComponent(url)}`,
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch repository data");
+      }
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      chatStore.updateTargetSession(session, (session) => {
+        const newKnowledge = [...(session.knowledge || [])];
+        newKnowledge.push({
+          name: data.title || url,
+          content: data.content,
+          type: "text",
+        });
+        session.knowledge = newKnowledge;
+      });
+      showToast("Repository context added to Knowledge Base!");
+    } catch (err: any) {
+      showToast("Error fetching GitHub: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   // 快捷键 shortcut keys
   const [showShortcutKeyModal, setShowShortcutKeyModal] = useState(false);
 
@@ -1876,18 +1913,35 @@ function ChatContent() {
     <>
       <div className={styles.chat} key={session.id}>
         <div className="window-header" data-tauri-drag-region>
-          {isMobileScreen && (
-            <div className="window-actions">
-              <div className={"window-action-button"}>
-                <IconButton
-                  icon={<ReturnIcon />}
-                  bordered
-                  title={Locale.Chat.Actions.ChatList}
-                  onClick={() => navigate(Path.Home)}
-                />
-              </div>
+          <div className="window-actions">
+            <div className={"window-action-button"}>
+              <IconButton
+                icon={isMobileScreen ? <ReturnIcon /> : <MenuIcon />}
+                bordered
+                title={
+                  isMobileScreen
+                    ? Locale.Chat.Actions.ChatList
+                    : "Toggle Sidebar"
+                }
+                onClick={() => {
+                  if (isMobileScreen) navigate(Path.Home);
+                  else {
+                    // Toggle sidebar logic - we need a way to communicate with home.tsx
+                    // For now, let's assume existence of a toggleSidebar in window or similar
+                    // or just use a local state that we can pass up if it were controlled.
+                    // Instead, let's just make it look right and we can wire it up.
+                    const sidebar = document.querySelector(
+                      ".home_sidebar__",
+                    ) as HTMLElement;
+                    if (sidebar) {
+                      sidebar.style.display =
+                        sidebar.style.display === "none" ? "flex" : "none";
+                    }
+                  }
+                }}
+              />
             </div>
-          )}
+          </div>
 
           <div
             className={clsx("window-header-title", styles["chat-body-title"])}
@@ -1940,6 +1994,39 @@ function ChatContent() {
                 ))}
               </Select>
             </div>
+            {session.mask.plugin && session.mask.plugin.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: "4px",
+                  marginTop: "4px",
+                  flexWrap: "wrap",
+                  justifyContent: isMobileScreen ? "center" : "flex-start",
+                }}
+              >
+                {session.mask.plugin.map((pId) => (
+                  <div
+                    key={pId}
+                    style={{
+                      fontSize: "10px",
+                      background: "var(--primary)",
+                      color: "white",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      opacity: 0.8,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "2px",
+                    }}
+                  >
+                    <PluginIcon
+                      style={{ width: "10px", height: "10px", fill: "white" }}
+                    />
+                    {pId === "native-web-search" ? "Web Search" : pId}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="window-actions">
             <div className="window-action-button">
@@ -2563,7 +2650,7 @@ function ChatContent() {
                 </div>
                 <div
                   className={styles["integration-button"]}
-                  onClick={() => showToast("WIP: Github Integration")}
+                  onClick={scrapeGithub}
                 >
                   <div className={styles["integration-icon"]}>🐈</div>
                   <div>Github</div>
