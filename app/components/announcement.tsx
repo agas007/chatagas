@@ -6,6 +6,27 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
+# Chatagas Release v2.0.0 🎨
+*Rilis: 13 April 2026 (WIB)*
+
+Selamat datang di **Chatagas v2.0.0**! Versi ini adalah tonggak sejarah baru dengan perombakan total antarmuka (UI/UX) yang terinspirasi dari **Claude AI**.
+
+### 🎨 Claude-Inspired Minimalist UI
+- **Clean Aesthetic**: Penghapusan gelembung chat tradisional untuk aliran pesan yang lebih bersih dan fokus pada teks.
+- **Warm & Minimalist Colors**: Palet warna baru yang lebih ramah di mata (Warm Off-White untuk mode terang, Charcoal untuk mode gelap).
+- **Narrow Focus Width**: Lebar chat kini dibatasi (max 720px) agar mata tidak lelah saat membaca barisan teks yang panjang.
+
+### 🖋️ Premium Typography
+- **Serif Font Experience**: Penggunaan font Serif pilihan secara global untuk memberikan kesan seperti membaca buku premium.
+- **Enhanced Readability**: Optimalisasi ukuran font (\`16px\`) dan jarak antar baris (\`line-height: 1.75\`) untuk kenyamanan maksimal.
+
+### 🕹️ User Interface Refinements
+- **Floating Input Panel**: Kotak input kini tampil melayang dengan efek bayangan halus, memberikan kesan modern dan futuristik.
+- **Model Selection Pill**: Pemilihan model kini lebih intuitif melalui tombol "Pill" di pojok kanan bawah kotak input.
+- **Icon-Only Controls**: Pembersihan antarmuka dari teks-teks yang tidak perlu (seperti tombol "Send"), digantikan dengan kontrol berbasis ikon yang elegan.
+
+---
+
 # Chatagas Release v1.4.2 📈
 *Rilis: 1 April 2026 (WIB)*
 
@@ -192,7 +213,11 @@ export function AnnouncementModal(props: { onClose: () => void }) {
         </div>
 
         <div style={{ padding: "20px 30px", overflowY: "auto", flex: 1 }}>
-          <Markdown content={RELEASE_NOTES} />
+          <Markdown
+            content={RELEASE_NOTES}
+            fontSize={16}
+            fontFamily="ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif"
+          />
         </div>
 
         <div

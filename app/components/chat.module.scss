@@ -339,6 +339,9 @@
   padding-bottom: 40px;
   position: relative;
   overscroll-behavior: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .chat-body-main-title {
@@ -358,12 +361,14 @@
 .chat-message {
   display: flex;
   flex-direction: row;
+  width: 100%;
+  max-width: var(--message-max-width);
+  justify-content: center;
 
   &:last-child {
     animation: slide-in ease 0.3s;
   }
 }
-
 .chat-message-user {
   display: flex;
   flex-direction: row-reverse;
@@ -483,14 +488,65 @@
   margin-top: 10px;
   border-radius: 18px;
   background-color: transparent;
-  padding: 10px;
-  font-size: 15px;
-  line-height: 1.6;
+  padding: 10px 0;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 1rem; /* 16px — matches Claude's body text */
+  line-height: 1.8;
+  letter-spacing: -0.005em;
   user-select: text;
   word-break: break-word;
   border: none;
   position: relative;
   transition: all ease 0.3s;
+
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+  }
+
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.125rem; }
+  
+  p {
+    margin-bottom: 1em;
+  }
+
+  ul, ol {
+    margin-bottom: 1em;
+    padding-left: 1.75em;
+
+    li {
+      margin-bottom: 0.35em;
+    }
+  }
+
+  code {
+    font-size: 0.875em;
+    background-color: var(--second);
+    border-radius: 4px;
+    padding: 0.15em 0.4em;
+  }
+
+  pre code {
+    background: transparent;
+    padding: 0;
+    font-size: 0.875rem;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  blockquote {
+    border-left: 3px solid var(--primary);
+    margin: 1em 0;
+    padding-left: 1em;
+    opacity: 0.8;
+  }
 }
 
 .chat-message-audio {
@@ -589,8 +645,8 @@
 }
 
 .chat-message-user > .chat-message-container > .chat-message-item {
-  background-color: var(--second);
-  padding: 14px 18px;
+  background-color: transparent;
+  padding: 10px 0;
 
   &:hover {
     min-width: 0;
@@ -678,10 +734,11 @@
   cursor: text;
   display: flex;
   flex: 1;
-  border-radius: 26px;
-  border: var(--border-in-light);
+  border-radius: 20px;
+  border: 1px solid rgba(0,0,0,0.08);
   background-color: var(--white);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
 }
 
 .chat-input-panel-inner-attach {
@@ -689,8 +746,8 @@
 }
 
 .chat-input-panel-inner:has(.chat-input:focus) {
-  border: 1px solid var(--primary);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0,0,0,0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
 }
 
 .chat-input {
@@ -702,7 +759,7 @@
   color: var(--black);
   font-family: inherit;
   font-size: 15px;
-  padding: 16px 90px 16px 20px;
+  padding: 16px 105px 16px 20px;
   resize: none;
   outline: none;
   box-sizing: border-box;
@@ -711,22 +768,26 @@
 
 
 
-.chat-input-send {
-  background-color: var(--primary);
-  color: white;
-
-  position: absolute;
-  right: 30px;
-  bottom: 32px;
-}
-
 .chat-input-record {
-  background-color: var(--white);
+  background-color: transparent;
   color: var(--black);
-  border: var(--border-in-light);
+  border: none;
   position: absolute;
-  right: 140px;
-  bottom: 32px;
+  right: 12px;
+  bottom: 8px;
+  border-radius: 50%;
+  padding: 5px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.6;
+
+  &:hover {
+    background-color: var(--hover-color);
+    opacity: 1;
+  }
 
   &.recording {
     background-color: var(--primary);
@@ -734,6 +795,114 @@
     border-color: var(--primary);
     animation: pulse 1.5s infinite;
   }
+}
+
+.model-pill {
+  position: absolute;
+  right: 58px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  background-color: var(--white);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  user-select: none;
+  border: 1px solid var(--border-in-light);
+
+  &:hover {
+    background-color: var(--hover-color);
+  }
+
+  .model-pill-name {
+    color: var(--black);
+    font-weight: 500;
+    margin-right: 4px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .model-pill-icon {
+    width: 12px;
+    height: 12px;
+    opacity: 0.5;
+  }
+}
+
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px 40px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  animation: slide-in ease 0.5s;
+  flex: 1;
+
+  .welcome-logo {
+    width: 54px;
+    height: 54px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 100%;
+      height: 100%;
+      fill: #D97757;
+    }
+  }
+
+  .welcome-greeting {
+    font-size: 3rem;
+    font-weight: 500;
+    margin-bottom: 48px;
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    color: var(--black);
+    text-align: center;
+    letter-spacing: -0.02em;
+  }
+}
+
+.welcome-suggestions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  .suggestion-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-in-light);
+    background-color: var(--white);
+    font-size: 14px;
+    color: var(--black);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: var(--gray);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+.chat-welcome-input-wrapper {
+  width: 100%;
+  max-width: var(--message-max-width);
+  margin-top: -20px;
 }
 
 @keyframes pulse {

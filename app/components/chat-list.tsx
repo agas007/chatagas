@@ -86,31 +86,6 @@ export function ChatItem(props: {
                 </div>
                 <div className={styles["chat-item-date"]}>{props.time}</div>
               </div>
-              {!props.narrow && (
-                <div className={styles["chat-item-folder-row"]}>
-                  <span className={styles["chat-item-folder-label"]}>
-                    Folder
-                  </span>
-                  <select
-                    className={styles["chat-item-folder-select"]}
-                    value={props.folderId ?? ""}
-                    onChange={(e) =>
-                      props.onMoveFolder?.(e.currentTarget.value || undefined)
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                  >
-                    <option value="">Unsorted</option>
-                    {props.folders.map((folder) => (
-                      <option key={folder.id} value={folder.id}>
-                        {folder.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </>
           )}
 
@@ -127,6 +102,162 @@ export function ChatItem(props: {
         </div>
       )}
     </Draggable>
+  );
+}
+
+/** Collapsible project/folder section in the sidebar, Claude-style */
+function ProjectSection(props: {
+  folder: { id: string; name: string; pinned?: boolean };
+  sessions: ChatSession[];
+  selectedIndex: number;
+  allSessions: ChatSession[];
+  folderIndex: number;
+  onSelectSession: (originalIndex: number) => void;
+  onDeleteSession: (originalIndex: number) => void;
+  onRename: (id: string, name: string) => void;
+  onDelete: (id: string) => void;
+  onTogglePin: (id: string) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(props.folder.name);
+  const [showActions, setShowActions] = useState(false);
+  const navigate = useNavigate();
+  const { pathname: currentPath } = useLocation();
+
+  return (
+    <div className={styles["project-section"]}>
+      {/* Header row */}
+      <div
+        className={styles["project-header"]}
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
+      >
+        <button
+          className={styles["project-collapse-btn"]}
+          onClick={() => setCollapsed((v) => !v)}
+          title={collapsed ? "Expand" : "Collapse"}
+        >
+          <span
+            className={clsx(styles["project-chevron"], {
+              [styles["project-chevron-collapsed"]]: collapsed,
+            })}
+          >
+            ▾
+          </span>
+        </button>
+
+        {editing ? (
+          <input
+            className={styles["project-name-input"]}
+            value={editName}
+            autoFocus
+            onChange={(e) => setEditName(e.currentTarget.value)}
+            onBlur={() => {
+              if (editName.trim()) props.onRename(props.folder.id, editName);
+              setEditing(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (editName.trim()) props.onRename(props.folder.id, editName);
+                setEditing(false);
+              }
+              if (e.key === "Escape") setEditing(false);
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span
+            className={styles["project-name"]}
+            onDoubleClick={() => {
+              setEditName(props.folder.name);
+              setEditing(true);
+            }}
+          >
+            {props.folder.pinned ? "📌 " : ""}
+            {props.folder.name}
+          </span>
+        )}
+
+        <span className={styles["project-count"]}>{props.sessions.length}</span>
+
+        {showActions && !editing && (
+          <div className={styles["project-actions"]}>
+            <button
+              className={styles["project-action-btn"]}
+              title={props.folder.pinned ? "Unpin" : "Pin"}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onTogglePin(props.folder.id);
+              }}
+            >
+              {props.folder.pinned ? "📌" : "☆"}
+            </button>
+            <button
+              className={styles["project-action-btn"]}
+              title="Rename"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditName(props.folder.name);
+                setEditing(true);
+              }}
+            >
+              ✏️
+            </button>
+            <button
+              className={clsx(
+                styles["project-action-btn"],
+                styles["project-action-delete"],
+              )}
+              title="Delete folder"
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (
+                  await showConfirm("Delete this project? Chats will be kept.")
+                )
+                  props.onDelete(props.folder.id);
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Chat items inside folder */}
+      {!collapsed && (
+        <div className={styles["project-chat-list"]}>
+          {props.sessions.length === 0 && (
+            <div className={styles["project-empty"]}>No chats yet</div>
+          )}
+          {props.sessions.map((item) => {
+            const originalIndex = props.allSessions.findIndex(
+              (s) => s.id === item.id,
+            );
+            const isSelected =
+              originalIndex === props.selectedIndex &&
+              (currentPath === Path.Chat || currentPath === Path.Home);
+            return (
+              <div
+                key={item.id}
+                className={clsx(styles["project-chat-item"], {
+                  [styles["project-chat-item-selected"]]: isSelected,
+                })}
+                onClick={() => {
+                  navigate(Path.Chat);
+                  props.onSelectSession(originalIndex);
+                }}
+                title={item.topic}
+              >
+                <span className={styles["project-chat-title"]}>
+                  {item.topic}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -149,78 +280,42 @@ export function ChatList(props: { narrow?: boolean }) {
   const chatStore = useChatStore();
   const navigate = useNavigate();
   const isMobileScreen = useMobileScreen();
-  const [collapsedFolders, setCollapsedFolders] = useState(false);
-  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
-  const [editingFolderName, setEditingFolderName] = useState("");
-  const visibleSessions =
-    activeFolderId === "all"
-      ? sessions
-      : sessions.filter((item) => item.folderId === activeFolderId);
+
   const sortedFolders = useMemo(
     () =>
       folders.slice().sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned)),
     [folders],
   );
-  const pinnedFolders = sortedFolders.filter((f) => !!f.pinned);
-  const normalFolders = sortedFolders.filter((f) => !f.pinned);
-  const folderCountMap = useMemo(() => {
-    const map: Record<string, number> = {};
+
+  // Sessions not in any folder
+  const ungroupedSessions = useMemo(
+    () => sessions.filter((s) => !s.folderId),
+    [sessions],
+  );
+
+  // Sessions per folder
+  const sessionsByFolder = useMemo(() => {
+    const map: Record<string, ChatSession[]> = {};
     sessions.forEach((s) => {
-      const key = s.folderId ?? "unsorted";
-      map[key] = (map[key] ?? 0) + 1;
+      if (s.folderId) {
+        if (!map[s.folderId]) map[s.folderId] = [];
+        map[s.folderId].push(s);
+      }
     });
     return map;
   }, [sessions]);
 
-  const reorderWithinGroup = (
-    group: typeof sortedFolders,
-    sourceIndex: number,
-    destinationIndex: number,
-  ) => {
-    const sourceFolder = group[sourceIndex];
-    const targetFolder = group[destinationIndex];
-    if (!sourceFolder || !targetFolder) return;
-    reorderFolder(sourceFolder.id, targetFolder.id);
-  };
-
   const onDragEnd: OnDragEndResponder = (result) => {
     const { destination, source } = result;
-    if (!destination) {
-      return;
-    }
-
+    if (!destination) return;
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
-    ) {
+    )
       return;
-    }
 
-    if (source.droppableId === "pinned-folder-list") {
-      if (destination.droppableId !== "pinned-folder-list") return;
-      reorderWithinGroup(pinnedFolders, source.index, destination.index);
-      return;
-    }
-
-    if (source.droppableId === "normal-folder-list") {
-      if (destination.droppableId !== "normal-folder-list") return;
-      reorderWithinGroup(normalFolders, source.index, destination.index);
-      return;
-    }
-
-    if (destination.droppableId.startsWith("folder-drop-")) {
-      const sourceSession = visibleSessions[source.index];
-      if (!sourceSession) return;
-      const folderId = destination.droppableId.replace("folder-drop-", "");
-      assignSessionFolder(
-        sourceSession.id,
-        folderId === "unsorted" ? undefined : folderId,
-      );
-      return;
-    }
-
-    const sourceSession = visibleSessions[source.index];
-    const destinationSession = visibleSessions[destination.index];
+    const sourceSession = ungroupedSessions[source.index];
+    const destinationSession = ungroupedSessions[destination.index];
     if (!sourceSession || !destinationSession) return;
 
     const from = sessions.findIndex((s) => s.id === sourceSession.id);
@@ -229,308 +324,18 @@ export function ChatList(props: { narrow?: boolean }) {
     moveSession(from, to);
   };
 
-  return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      {!props.narrow && (
-        <div className={styles["chat-folder-toolbar"]}>
-          <select
-            className={styles["chat-folder-filter"]}
-            value={activeFolderId}
-            onChange={(e) => setActiveFolder(e.currentTarget.value)}
-          >
-            <option value="all">All Chats</option>
-            {sortedFolders.map((folder) => (
-              <option key={folder.id} value={folder.id}>
-                {folder.pinned ? "📌 " : ""}
-                {folder.name}
-              </option>
-            ))}
-          </select>
-          <button
-            className={styles["chat-folder-button"]}
-            onClick={async (e) => {
-              e.stopPropagation();
-              const name = await showPrompt("Create folder", "", 2);
-              if (name.trim()) createFolder(name);
-            }}
-          >
-            + Folder
-          </button>
-          {activeFolderId !== "all" && (
-            <button
-              className={styles["chat-folder-button"]}
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (
-                  await showConfirm("Delete this folder? Chats will be kept.")
-                ) {
-                  deleteFolder(activeFolderId);
-                }
-              }}
+  if (props.narrow) {
+    // Narrow sidebar: just show all chats as icons
+    return (
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="chat-list">
+          {(provided) => (
+            <div
+              className={styles["chat-list"]}
+              ref={provided.innerRef}
+              {...provided.droppableProps}
             >
-              Delete
-            </button>
-          )}
-        </div>
-      )}
-      {!props.narrow && sortedFolders.length > 0 && (
-        <div className={styles["chat-folder-list"]}>
-          <button
-            className={styles["chat-folder-toggle"]}
-            onClick={() => setCollapsedFolders((v) => !v)}
-          >
-            {collapsedFolders ? "Expand Folders" : "Collapse Folders"}
-          </button>
-          {!collapsedFolders && (
-            <>
-              <Droppable droppableId="folder-drop-unsorted">
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={styles["chat-folder-drop"]}
-                  >
-                    Drop chat here: Unsorted ({folderCountMap.unsorted ?? 0})
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-              <Droppable droppableId="pinned-folder-list">
-                {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps}>
-                    {pinnedFolders.map((folder, idx) => (
-                      <Draggable
-                        key={folder.id}
-                        draggableId={`folder-${folder.id}`}
-                        index={idx}
-                      >
-                        {(dragProvided) => (
-                          <div
-                            className={styles["chat-folder-item"]}
-                            ref={dragProvided.innerRef}
-                            {...dragProvided.draggableProps}
-                          >
-                            <div className={styles["chat-folder-head"]}>
-                              <button
-                                className={styles["chat-folder-drag"]}
-                                {...dragProvided.dragHandleProps}
-                              >
-                                ::
-                              </button>
-                              {editingFolderId === folder.id ? (
-                                <input
-                                  className={styles["chat-folder-input"]}
-                                  value={editingFolderName}
-                                  onChange={(e) =>
-                                    setEditingFolderName(e.currentTarget.value)
-                                  }
-                                  onBlur={() => {
-                                    if (editingFolderName.trim()) {
-                                      renameFolder(
-                                        folder.id,
-                                        editingFolderName,
-                                      );
-                                    }
-                                    setEditingFolderId(null);
-                                    setEditingFolderName("");
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      if (editingFolderName.trim()) {
-                                        renameFolder(
-                                          folder.id,
-                                          editingFolderName,
-                                        );
-                                      }
-                                      setEditingFolderId(null);
-                                      setEditingFolderName("");
-                                    }
-                                  }}
-                                  autoFocus
-                                />
-                              ) : (
-                                <button
-                                  className={styles["chat-folder-name"]}
-                                  onDoubleClick={() => {
-                                    setEditingFolderId(folder.id);
-                                    setEditingFolderName(folder.name);
-                                  }}
-                                  onClick={() => setActiveFolder(folder.id)}
-                                >
-                                  📌 {folder.name}
-                                </button>
-                              )}
-                              <span className={styles["chat-folder-badge"]}>
-                                {folderCountMap[folder.id] ?? 0}
-                              </span>
-                            </div>
-                            <div className={styles["chat-folder-actions"]}>
-                              <button
-                                className={styles["chat-folder-action-button"]}
-                                onClick={() => togglePinFolder(folder.id)}
-                              >
-                                Unpin
-                              </button>
-                              <button
-                                className={styles["chat-folder-action-button"]}
-                                onClick={async () => {
-                                  if (
-                                    await showConfirm(
-                                      "Delete this folder? Chats will be kept.",
-                                    )
-                                  ) {
-                                    deleteFolder(folder.id);
-                                  }
-                                }}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                            <Droppable droppableId={`folder-drop-${folder.id}`}>
-                              {(providedDrop) => (
-                                <div
-                                  ref={providedDrop.innerRef}
-                                  {...providedDrop.droppableProps}
-                                  className={styles["chat-folder-drop"]}
-                                >
-                                  Drop chat here
-                                  {providedDrop.placeholder}
-                                </div>
-                              )}
-                            </Droppable>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-              <Droppable droppableId="normal-folder-list">
-                {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps}>
-                    {normalFolders.map((folder, idx) => (
-                      <Draggable
-                        key={folder.id}
-                        draggableId={`folder-${folder.id}`}
-                        index={idx}
-                      >
-                        {(dragProvided) => (
-                          <div
-                            className={styles["chat-folder-item"]}
-                            ref={dragProvided.innerRef}
-                            {...dragProvided.draggableProps}
-                          >
-                            <div className={styles["chat-folder-head"]}>
-                              <button
-                                className={styles["chat-folder-drag"]}
-                                {...dragProvided.dragHandleProps}
-                              >
-                                ::
-                              </button>
-                              {editingFolderId === folder.id ? (
-                                <input
-                                  className={styles["chat-folder-input"]}
-                                  value={editingFolderName}
-                                  onChange={(e) =>
-                                    setEditingFolderName(e.currentTarget.value)
-                                  }
-                                  onBlur={() => {
-                                    if (editingFolderName.trim()) {
-                                      renameFolder(
-                                        folder.id,
-                                        editingFolderName,
-                                      );
-                                    }
-                                    setEditingFolderId(null);
-                                    setEditingFolderName("");
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      if (editingFolderName.trim()) {
-                                        renameFolder(
-                                          folder.id,
-                                          editingFolderName,
-                                        );
-                                      }
-                                      setEditingFolderId(null);
-                                      setEditingFolderName("");
-                                    }
-                                  }}
-                                  autoFocus
-                                />
-                              ) : (
-                                <button
-                                  className={styles["chat-folder-name"]}
-                                  onDoubleClick={() => {
-                                    setEditingFolderId(folder.id);
-                                    setEditingFolderName(folder.name);
-                                  }}
-                                  onClick={() => setActiveFolder(folder.id)}
-                                >
-                                  {folder.name}
-                                </button>
-                              )}
-                              <span className={styles["chat-folder-badge"]}>
-                                {folderCountMap[folder.id] ?? 0}
-                              </span>
-                            </div>
-                            <div className={styles["chat-folder-actions"]}>
-                              <button
-                                className={styles["chat-folder-action-button"]}
-                                onClick={() => togglePinFolder(folder.id)}
-                              >
-                                Pin
-                              </button>
-                              <button
-                                className={styles["chat-folder-action-button"]}
-                                onClick={async () => {
-                                  if (
-                                    await showConfirm(
-                                      "Delete this folder? Chats will be kept.",
-                                    )
-                                  ) {
-                                    deleteFolder(folder.id);
-                                  }
-                                }}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                            <Droppable droppableId={`folder-drop-${folder.id}`}>
-                              {(providedDrop) => (
-                                <div
-                                  ref={providedDrop.innerRef}
-                                  {...providedDrop.droppableProps}
-                                  className={styles["chat-folder-drop"]}
-                                >
-                                  Drop chat here
-                                  {providedDrop.placeholder}
-                                </div>
-                              )}
-                            </Droppable>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </>
-          )}
-        </div>
-      )}
-      <Droppable droppableId="chat-list">
-        {(provided) => (
-          <div
-            className={styles["chat-list"]}
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-          >
-            {visibleSessions.map((item: ChatSession, i: number) => {
-              const originalIndex = sessions.findIndex((s) => s.id === item.id);
-              return (
+              {sessions.map((item: ChatSession, i: number) => (
                 <ChatItem
                   title={item.topic}
                   time={new Date(item.lastUpdate).toLocaleString()}
@@ -538,17 +343,14 @@ export function ChatList(props: { narrow?: boolean }) {
                   key={item.id}
                   id={item.id}
                   index={i}
-                  selected={originalIndex === selectedIndex}
+                  selected={i === selectedIndex}
                   onClick={() => {
                     navigate(Path.Chat);
-                    selectSession(originalIndex);
+                    selectSession(i);
                   }}
                   onDelete={async () => {
-                    if (
-                      (!props.narrow && !isMobileScreen) ||
-                      (await showConfirm(Locale.Home.DeleteChat))
-                    ) {
-                      chatStore.deleteSession(originalIndex);
+                    if (await showConfirm(Locale.Home.DeleteChat)) {
+                      chatStore.deleteSession(i);
                     }
                   }}
                   onMoveFolder={(folderId) =>
@@ -556,15 +358,111 @@ export function ChatList(props: { narrow?: boolean }) {
                   }
                   folderId={item.folderId}
                   folders={folders}
-                  narrow={props.narrow}
+                  narrow={true}
                   mask={item.mask}
                 />
-              );
-            })}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    );
+  }
+
+  return (
+    <div className={styles["sidebar-projects-container"]}>
+      {/* Projects section header */}
+      {sortedFolders.length > 0 && (
+        <div className={styles["sidebar-section-label"]}>Projects</div>
+      )}
+
+      {/* Render each folder as a project section */}
+      {sortedFolders.map((folder, idx) => (
+        <ProjectSection
+          key={folder.id}
+          folder={folder}
+          sessions={sessionsByFolder[folder.id] ?? []}
+          allSessions={sessions}
+          selectedIndex={selectedIndex}
+          folderIndex={idx}
+          onSelectSession={(i) => selectSession(i)}
+          onDeleteSession={(i) => chatStore.deleteSession(i)}
+          onRename={(id, name) => renameFolder(id, name)}
+          onDelete={(id) => deleteFolder(id)}
+          onTogglePin={(id) => togglePinFolder(id)}
+        />
+      ))}
+
+      {/* New project button */}
+      <button
+        className={styles["new-project-btn"]}
+        onClick={async () => {
+          const name = await showPrompt("Project name", "", 2);
+          if (name.trim()) createFolder(name);
+        }}
+      >
+        <span className={styles["new-project-icon"]}>＋</span> New project
+      </button>
+
+      {/* Ungrouped chats */}
+      {ungroupedSessions.length > 0 && (
+        <div
+          className={styles["sidebar-section-label"]}
+          style={{ marginTop: 20 }}
+        >
+          Chats
+        </div>
+      )}
+
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="chat-list">
+          {(provided) => (
+            <div
+              className={styles["chat-list"]}
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {ungroupedSessions.map((item: ChatSession, i: number) => {
+                const originalIndex = sessions.findIndex(
+                  (s) => s.id === item.id,
+                );
+                return (
+                  <ChatItem
+                    title={item.topic}
+                    time={new Date(item.lastUpdate).toLocaleString()}
+                    count={item.messages.length}
+                    key={item.id}
+                    id={item.id}
+                    index={i}
+                    selected={originalIndex === selectedIndex}
+                    onClick={() => {
+                      navigate(Path.Chat);
+                      selectSession(originalIndex);
+                    }}
+                    onDelete={async () => {
+                      if (
+                        !isMobileScreen ||
+                        (await showConfirm(Locale.Home.DeleteChat))
+                      ) {
+                        chatStore.deleteSession(originalIndex);
+                      }
+                    }}
+                    onMoveFolder={(folderId) =>
+                      assignSessionFolder(item.id, folderId)
+                    }
+                    folderId={item.folderId}
+                    folders={folders}
+                    narrow={false}
+                    mask={item.mask}
+                  />
+                );
+              })}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </div>
   );
 }
