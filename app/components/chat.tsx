@@ -124,7 +124,6 @@ import { createTTSPlayer } from "../utils/audio";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "../utils/ms_edge_tts";
 
 import { isEmpty } from "lodash-es";
-import { getModelProvider } from "../utils/model";
 import clsx from "clsx";
 import { getAvailableClientsCount, isMcpEnabled } from "../mcp/actions";
 import { useSession } from "next-auth/react";
@@ -1330,6 +1329,23 @@ function ChatContent() {
     ChatControllerPool.stop(session.id, messageId);
   };
 
+  const modelSelectorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        modelSelectorRef.current &&
+        !modelSelectorRef.current.contains(e.target as Node)
+      ) {
+        setShowModelSelector(false);
+      }
+    };
+    if (showModelSelector) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showModelSelector]);
+
   useEffect(() => {
     chatStore.updateTargetSession(session, (session) => {
       const stopTiming = Date.now() - REQUEST_TIMEOUT_MS;
@@ -2057,29 +2073,6 @@ function ChatContent() {
       <div className={styles.chat} key={session.id}>
         {/* ── Model Tabs Bar ── */}
         <div className={styles["model-tabs-bar"]}>
-          <div className={styles["model-tabs"]}>
-            {/* Active model tab */}
-            <div
-              className={clsx(styles["model-tab"], styles["model-tab-active"])}
-              onClick={() => setShowModelSelector(true)}
-            >
-              <span className={styles["model-tab-dot"]} />
-              <span className={styles["model-tab-name"]}>
-                {session.mask.modelConfig.model}
-              </span>
-              <span className={styles["model-tab-chevron"]}>⌄</span>
-            </div>
-
-            {/* Quick-add model button */}
-            <div
-              className={styles["model-tab-add"]}
-              onClick={() => setShowModelSelector(true)}
-              title="Switch or add model"
-            >
-              + Add Model
-            </div>
-          </div>
-
           {/* Agent mode badge */}
           {agentMode && (
             <div className={styles["agent-badge"]}>
@@ -2802,10 +2795,11 @@ function ChatContent() {
                       fontFamily: config.fontFamily,
                     }}
                   />
-                  <div
-                    className={styles["model-pill"]}
-                    onClick={() => setShowModelSelector(true)}
-                  >
+                  <div className={styles["model-pill"]} ref={modelSelectorRef}>
+                    <div
+                      className={styles["model-pill-select-trigger"]}
+                      onClick={() => setShowModelSelector(!showModelSelector)}
+                    />
                     <span className={styles["model-pill-name"]}>
                       {session.mask.modelConfig.model}
                     </span>
@@ -2819,6 +2813,47 @@ function ChatContent() {
                         />
                       </svg>
                     </div>
+
+                    {showModelSelector && (
+                      <div className={styles["model-selector-menu"]}>
+                        {models.map((m) => {
+                          const isSelected =
+                            session.mask.modelConfig.model === m.name &&
+                            session.mask.modelConfig.providerName ===
+                              m.provider?.providerName;
+                          return (
+                            <div
+                              key={`${m.name}@${m.provider?.providerName}`}
+                              className={clsx(styles["model-selector-item"], {
+                                [styles["active"]]: isSelected,
+                              })}
+                              onClick={() => {
+                                chatStore.updateTargetSession(session, (s) => {
+                                  s.mask.modelConfig.model =
+                                    m.name as ModelType;
+                                  s.mask.modelConfig.providerName = m.provider
+                                    ?.providerName as ServiceProvider;
+                                });
+                                setShowModelSelector(false);
+                              }}
+                            >
+                              <div
+                                className={styles["model-selector-item-title"]}
+                              >
+                                {m.displayName || m.name}
+                              </div>
+                              <div
+                                className={
+                                  styles["model-selector-item-subtitle"]
+                                }
+                              >
+                                {m.provider?.providerName}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   <IconButton
                     icon={isRecording ? <LoadingIcon /> : <HeadphoneIcon />}
@@ -2833,28 +2868,6 @@ function ChatContent() {
           </div>
         </div>
       </div>
-
-      {showModelSelector && (
-        <Selector
-          items={models.map((m) => ({
-            title: m.displayName || m.name,
-            subTitle: m.provider?.providerName,
-            value: `${m.name}@${m.provider?.providerName}`,
-          }))}
-          onClose={() => setShowModelSelector(false)}
-          onSelection={(selection) => {
-            const val = selection[0];
-            const [model, providerName] = getModelProvider(val);
-            chatStore.updateTargetSession(session, (s) => {
-              s.mask.modelConfig.model = model as ModelType;
-              s.mask.modelConfig.providerName = providerName as ServiceProvider;
-              (s.mask.modelConfig as any).parallelModels = [];
-              s.mask.syncGlobalConfig = false;
-              showToast(model);
-            });
-          }}
-        />
-      )}
 
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
