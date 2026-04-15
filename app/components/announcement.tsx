@@ -6,6 +6,30 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
 const RELEASE_NOTES = `
+# Chatagas Release v2.1.0 ⚡
+*Rilis: 15 April 2026 (WIB)*
+
+Versi ini membawa lompatan besar dalam produktivitas dengan fitur Agentic AI, kendali memori, dan navigasi model yang lebih efisien!
+
+### ⚡ Agentic AI (Power mode)
+- **Built-in Tools**: AI kini bisa melakukan pencarian web, membaca webpage, melakukan kalkulasi matematika kompleks, dan mengecek waktu secara real-time.
+- **Multi-step Reasoning**: Aktifkan fitur **Agent** melalui tombol ⚡ di kotak input untuk memicu loop pemecahan masalah yang lebih cerdas.
+- **Live Steps Tracker**: Pantau langkah-langkah kerja agent secara langsung melalui badge di bagian atas chat.
+
+### 🧠 Real-time Memory Slider
+- **Flexible Context**: Atur seberapa panjang "ingatan" (context window) yang digunakan AI melalui pill "Brain" di bawah kotak input.
+- **Instan Control**: Geser slider dari 1 hingga 32 pesan untuk mendapatkan hasil yang lebih fokus atau lebih luas secara instan.
+
+### 🗂️ Model Tabs Bar (Fast Switch)
+- **Claude-style Tabs**: Navigasi antar model favorit kini lebih cepat melalui barisan tab di bagian atas area chat.
+- **Model Persistence**: Model aktif ditampilkan dengan indikator visual yang jelas, memudahkan Anda berganti konteks tanpa kehilangan jejak.
+
+### 🔄 Intelligent Project Sync
+- **Folder Consistency**: Perbaikan sistem sinkronisasi folder (projects) untuk memastikan struktur folder Anda tetap sama di semua perangkat.
+- **Sync Stability**: Optimalisasi mesin auto-sync untuk penanganan data yang lebih cepat dan aman saat pindah perangkat.
+
+---
+
 # Chatagas Release v2.0.0 🎨
 *Rilis: 13 April 2026 (WIB)*
 
