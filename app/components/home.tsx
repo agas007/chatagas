@@ -267,14 +267,15 @@ export function Home() {
 
   const config = useAppConfig();
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [dismissedThisSession, setDismissedThisSession] = useState(false);
 
   useEffect(() => {
-    if (config.announcementVersion !== VERSION) {
+    if (config.announcementVersion !== VERSION && !dismissedThisSession) {
       setTimeout(() => {
         setShowAnnouncement(true);
-      }, 0);
+      }, 2000); // 2s delay
     }
-  }, [config.announcementVersion]);
+  }, [config.announcementVersion, dismissedThisSession]);
 
   useEffect(() => {
     console.log("[Config] got config from build time", getClientConfig());
@@ -372,6 +373,7 @@ export function Home() {
         <AnnouncementModal
           onClose={() => {
             setShowAnnouncement(false);
+            setDismissedThisSession(true);
             config.update((config) => (config.announcementVersion = VERSION));
           }}
         />

@@ -202,18 +202,24 @@ export function mergeAppState(localState: AppState, remoteState: AppState) {
 /**
  * Merge state with `lastUpdateTime`, older state will be override
  */
-export function mergeWithUpdate<T extends { lastUpdateTime?: number }>(
-  localState: T,
-  remoteState: T,
-) {
+export function mergeWithUpdate<
+  T extends { lastUpdateTime?: number; announcementVersion?: string },
+>(localState: T, remoteState: T) {
   const localUpdateTime = localState.lastUpdateTime ?? 0;
-  const remoteUpdateTime = remoteState.lastUpdateTime ?? 1; // <-- was bug: used localState instead of remoteState
+  const remoteUpdateTime = remoteState.lastUpdateTime ?? 0;
+
+  // Preserve the higher announcementVersion to avoid re-showing popups
+  const localVer = localState.announcementVersion || "";
+  const remoteVer = remoteState.announcementVersion || "";
+  const finalVer = localVer > remoteVer ? localVer : remoteVer;
 
   if (localUpdateTime < remoteUpdateTime) {
     merge(remoteState, localState);
+    if (finalVer) remoteState.announcementVersion = finalVer;
     return { ...remoteState };
   } else {
     merge(localState, remoteState);
+    if (finalVer) localState.announcementVersion = finalVer;
     return { ...localState };
   }
 }
