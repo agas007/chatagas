@@ -128,6 +128,13 @@ import { getModelProvider } from "../utils/model";
 import clsx from "clsx";
 import { getAvailableClientsCount, isMcpEnabled } from "../mcp/actions";
 import { useSession } from "next-auth/react";
+import {
+  AGENT_SYSTEM_PROMPT,
+  AGENT_MAX_STEPS,
+  executeTool,
+  parseToolCall,
+  stripToolCalls,
+} from "../utils/agent";
 
 const localStorage = safeLocalStorage();
 
@@ -1133,7 +1140,7 @@ function ChatContent() {
     }
   };
 
-  const doSubmit = (userInput: string) => {
+  const doSubmit = async (userInput: string) => {
     if (userInput.trim() === "" && isEmpty(attachImages)) return;
     const matchCommand = chatCommands.match(userInput);
     if (matchCommand.matched) {
@@ -1142,6 +1149,123 @@ function ChatContent() {
       matchCommand.invoke();
       return;
     }
+
+    if (agentMode) {
+      // ── Agentic loop ──
+      setIsLoading(true);
+      setAgentSteps([]);
+      setUserInput("");
+      setAttachImages([]);
+
+      // Save user message to session
+      const userMsg = createMessage({ role: "user", content: userInput });
+      chatStore.updateTargetSession(session, (s) => {
+        s.messages = s.messages.concat([userMsg]);
+      });
+
+      const botMsg = createMessage({
+        role: "assistant",
+        content: "",
+        streaming: true,
+      });
+      chatStore.updateTargetSession(session, (s) => {
+        s.messages = s.messages.concat([botMsg]);
+      });
+
+      let conversationMsgs = buildAgentMessages(userInput);
+      let fullResponse = "";
+      let steps = 0;
+
+      try {
+        while (steps < AGENT_MAX_STEPS) {
+          steps++;
+
+          // Call LLM via fetch (reuse existing api)
+          const api = await import("../client/api").then((m) =>
+            m.getClientApi(session.mask.modelConfig.providerName as any),
+          );
+
+          const llmResponse = await new Promise<string>((resolve, reject) => {
+            let acc = "";
+            api.llm.chat({
+              messages: conversationMsgs,
+              config: {
+                ...session.mask.modelConfig,
+                stream: false,
+              },
+              onUpdate(msg) {
+                acc = msg;
+              },
+              async onFinish(msg) {
+                resolve(msg || acc);
+              },
+              onError(err) {
+                reject(err);
+              },
+              onController() {},
+              onBeforeTool() {},
+              onAfterTool() {},
+            });
+          });
+
+          const toolCall = parseToolCall(llmResponse);
+
+          if (!toolCall) {
+            // No more tool calls — final answer
+            fullResponse = stripToolCalls(llmResponse);
+            break;
+          }
+
+          // Execute tool
+          const stepLabel = `🔧 ${toolCall.name}(${JSON.stringify(toolCall.args)})`;
+          setAgentSteps((prev) => [...prev, stepLabel]);
+
+          // Update streaming message to show thinking
+          botMsg.content =
+            fullResponse + `\n\n*Calling tool: ${toolCall.name}...*`;
+          chatStore.updateTargetSession(session, (s) => {
+            s.messages = s.messages.map((m) =>
+              m.id === botMsg.id ? { ...botMsg } : m,
+            );
+          });
+
+          const toolResult = await executeTool(
+            toolCall.name,
+            toolCall.args || {},
+          );
+
+          // Add assistant+tool messages to conversation
+          conversationMsgs = [
+            ...conversationMsgs,
+            { role: "assistant" as const, content: llmResponse },
+            {
+              role: "user" as const,
+              content: `<tool_result>\n${toolResult}\n</tool_result>`,
+            },
+          ];
+
+          fullResponse = stripToolCalls(llmResponse) + "\n";
+        }
+      } catch (e: any) {
+        fullResponse = `Agent error: ${e.message}`;
+      }
+
+      // Final message
+      botMsg.content = fullResponse || "(No response)";
+      botMsg.streaming = false;
+      botMsg.date = new Date().toLocaleString();
+      chatStore.updateTargetSession(session, (s) => {
+        s.messages = s.messages.map((m) =>
+          m.id === botMsg.id ? { ...botMsg } : m,
+        );
+        s.lastUpdate = Date.now();
+      });
+      setIsLoading(false);
+      setAutoScroll(true);
+      return;
+    }
+
+    // ── Normal (non-agent) submit ──
     setIsLoading(true);
     chatStore
       .onUserInput(userInput, attachImages)
@@ -1155,6 +1279,34 @@ function ChatContent() {
   };
 
   const [showModelSelector, setShowModelSelector] = useState(false);
+
+  // ── Memory / context depth slider ──
+  const [showMemorySlider, setShowMemorySlider] = useState(false);
+  const memoryCount = session.mask.modelConfig.historyMessageCount ?? 8;
+  const setMemoryCount = (v: number) => {
+    chatStore.updateTargetSession(session, (s) => {
+      s.mask.modelConfig.historyMessageCount = v;
+    });
+  };
+
+  // ── Agent mode ──
+  const [agentMode, setAgentMode] = useState(false);
+  const [agentSteps, setAgentSteps] = useState<string[]>([]);
+
+  // Build agent messages from session messages
+  const buildAgentMessages = (userText: string) => {
+    const history = session.messages.slice(-memoryCount * 2);
+    const msgs: any[] = [
+      { role: "system" as const, content: AGENT_SYSTEM_PROMPT },
+      ...history.map((m) => ({
+        role: m.role,
+        content:
+          typeof m.content === "string" ? m.content : getMessageTextContent(m),
+      })),
+      { role: "user" as const, content: userText },
+    ];
+    return msgs;
+  };
 
   const onPromptSelect = (prompt: RenderPrompt) => {
     setTimeout(() => {
@@ -1924,6 +2076,43 @@ function ChatContent() {
   return (
     <>
       <div className={styles.chat} key={session.id}>
+        {/* ── Model Tabs Bar ── */}
+        <div className={styles["model-tabs-bar"]}>
+          <div className={styles["model-tabs"]}>
+            {/* Active model tab */}
+            <div
+              className={clsx(styles["model-tab"], styles["model-tab-active"])}
+              onClick={() => setShowModelSelector(true)}
+            >
+              <span className={styles["model-tab-dot"]} />
+              <span className={styles["model-tab-name"]}>
+                {session.mask.modelConfig.model}
+              </span>
+              <span className={styles["model-tab-chevron"]}>⌄</span>
+            </div>
+
+            {/* Quick-add model button */}
+            <div
+              className={styles["model-tab-add"]}
+              onClick={() => setShowModelSelector(true)}
+              title="Switch or add model"
+            >
+              + Add Model
+            </div>
+          </div>
+
+          {/* Agent mode badge */}
+          {agentMode && (
+            <div className={styles["agent-badge"]}>
+              ⚡ Agent Mode
+              {agentSteps.length > 0 && (
+                <span className={styles["agent-steps"]}>
+                  {agentSteps.length} steps
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         <div className="window-header" data-tauri-drag-region>
           <div className="window-actions">
             <div className={"window-action-button"}>
@@ -2556,6 +2745,62 @@ function ChatContent() {
                   showKnowledgeBase={showKnowledgeBase}
                   setShowKnowledgeBase={setShowKnowledgeBase}
                 />
+
+                {/* ── Memory slider + Agent toggle ── */}
+                <div className={styles["chat-input-toolbar"]}>
+                  {/* Memory pill */}
+                  <div
+                    className={styles["memory-pill"]}
+                    onClick={() => setShowMemorySlider((v) => !v)}
+                    title="Chat memory depth"
+                  >
+                    <span className={styles["memory-pill-icon"]}>🧠</span>
+                    <span className={styles["memory-pill-label"]}>
+                      {memoryCount}
+                    </span>
+                  </div>
+                  {showMemorySlider && (
+                    <div className={styles["memory-slider-popup"]}>
+                      <div className={styles["memory-slider-label"]}>
+                        Memory depth: <strong>{memoryCount}</strong> messages
+                      </div>
+                      <input
+                        type="range"
+                        min={1}
+                        max={32}
+                        step={1}
+                        value={memoryCount}
+                        onChange={(e) => setMemoryCount(Number(e.target.value))}
+                        className={styles["memory-slider-input"]}
+                      />
+                      <div className={styles["memory-slider-bounds"]}>
+                        <span>1</span>
+                        <span>32</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Agent toggle */}
+                  <div
+                    className={clsx(styles["agent-toggle"], {
+                      [styles["agent-toggle-active"]]: agentMode,
+                    })}
+                    onClick={() => {
+                      setAgentMode((v) => !v);
+                      setAgentSteps([]);
+                    }}
+                    title={
+                      agentMode
+                        ? "Agent mode ON — click to disable"
+                        : "Enable agentic AI (web search, tools, multi-step)"
+                    }
+                  >
+                    ⚡
+                    <span className={styles["agent-toggle-label"]}>
+                      {agentMode ? "Agent ON" : "Agent"}
+                    </span>
+                  </div>
+                </div>
                 <div
                   className={clsx(styles["chat-input-panel-inner"], {
                     [styles["chat-input-panel-inner-attach"]]:

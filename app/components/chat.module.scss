@@ -1299,3 +1299,268 @@
     opacity: 0.8;
   }
 }
+
+/* ══════════════════════════════════════════
+   MODEL TABS BAR  (OpenRouter-style)
+══════════════════════════════════════════ */
+.model-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 40px;
+  border-bottom: 1px solid var(--border-in-light);
+  background: var(--white);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.model-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.model-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--black);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  opacity: 0.55;
+
+  &:hover {
+    opacity: 0.85;
+    background: var(--hover-color);
+  }
+}
+
+.model-tab-active {
+  opacity: 1;
+  background: var(--gray);
+  border-color: var(--border-in-light);
+  font-weight: 500;
+}
+
+.model-tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.model-tab-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-tab-chevron {
+  font-size: 10px;
+  opacity: 0.5;
+  margin-left: 2px;
+}
+
+.model-tab-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-in-light);
+  font-size: 12px;
+  color: var(--black);
+  opacity: 0.5;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+
+  &:hover {
+    opacity: 0.8;
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+}
+
+/* Agent mode badge (in tabs bar) */
+.agent-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #f59e0b22, #d9770611);
+  border: 1px solid #f59e0b66;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #d97706;
+  font-weight: 500;
+  white-space: nowrap;
+  animation: pulse 2s infinite;
+}
+
+.agent-steps {
+  background: #f59e0b;
+  color: white;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* ══════════════════════════════════════════
+   CHAT INPUT TOOLBAR  (memory + agent)
+══════════════════════════════════════════ */
+.chat-input-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 2px 4px;
+  position: relative;
+}
+
+/* Memory pill */
+.memory-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--white);
+  border: 1px solid var(--border-in-light);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--black);
+  transition: all 0.15s ease;
+  user-select: none;
+
+  &:hover {
+    border-color: var(--primary);
+    background: var(--gray);
+  }
+
+  .memory-pill-icon {
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .memory-pill-label {
+    font-weight: 600;
+    font-size: 12px;
+    min-width: 14px;
+    text-align: center;
+  }
+}
+
+/* Slider popup */
+.memory-slider-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 200;
+  background: var(--white);
+  border: 1px solid var(--border-in-light);
+  border-radius: 14px;
+  padding: 14px 16px 10px;
+  width: 260px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  animation: slide-in ease 0.15s;
+
+  .memory-slider-label {
+    font-size: 12.5px;
+    color: var(--black);
+    margin-bottom: 10px;
+
+    strong {
+      color: var(--primary);
+    }
+  }
+
+  .memory-slider-input {
+    width: 100%;
+    accent-color: var(--primary);
+    cursor: pointer;
+    height: 4px;
+  }
+
+  .memory-slider-bounds {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    opacity: 0.4;
+    margin-top: 4px;
+    color: var(--black);
+  }
+}
+
+/* Agent toggle button */
+.agent-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  background: var(--white);
+  border: 1px solid var(--border-in-light);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--black);
+  transition: all 0.2s ease;
+  user-select: none;
+
+  &:hover {
+    border-color: #f59e0b;
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .agent-toggle-label {
+    font-weight: 500;
+    font-size: 12px;
+  }
+}
+
+.agent-toggle-active {
+  background: linear-gradient(135deg, #fef3c7, #fffbeb);
+  border-color: #f59e0b;
+  color: #92400e;
+  box-shadow: 0 0 0 2px #f59e0b22;
+
+  &:hover {
+    background: #fde68a;
+  }
+}
+
+/* ══════════════════════════════════════════
+   MOBILE overrides for new components
+══════════════════════════════════════════ */
+@media only screen and (max-width: 600px) {
+  .model-tabs-bar {
+    padding: 0 10px;
+    height: 36px;
+  }
+
+  .model-tab-name {
+    max-width: 100px;
+  }
+
+  .model-tab-add {
+    display: none; /* hide on mobile, just use active tab */
+  }
+
+  .memory-slider-popup {
+    left: 0;
+    width: 220px;
+  }
+}
+
