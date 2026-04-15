@@ -64,6 +64,28 @@ type StateMerger = {
 // we merge remote state to local state
 const MergeStates: StateMerger = {
   [StoreKey.Chat]: (localState, remoteState) => {
+    // merge folders first
+    if (remoteState.folders && remoteState.folders.length > 0) {
+      const localFolderIds = new Set(
+        (localState.folders || []).map((f) => f.id),
+      );
+      remoteState.folders.forEach((remoteFolder) => {
+        if (!localFolderIds.has(remoteFolder.id)) {
+          localState.folders = localState.folders || [];
+          localState.folders.push(remoteFolder);
+        } else {
+          // Update the folder name/pin if remote is newer
+          const localFolder = localState.folders.find(
+            (f) => f.id === remoteFolder.id,
+          );
+          if (localFolder && remoteFolder.createdAt > localFolder.createdAt) {
+            localFolder.name = remoteFolder.name;
+            localFolder.pinned = remoteFolder.pinned;
+          }
+        }
+      });
+    }
+
     // merge sessions
     const localSessions: Record<string, ChatSession> = {};
     localState.sessions.forEach((s) => (localSessions[s.id] = s));
@@ -89,6 +111,11 @@ const MergeStates: StateMerger = {
         localSession.messages.sort(
           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
         );
+
+        // sync folderId from whichever is newer
+        if (remoteSession.lastUpdate > localSession.lastUpdate) {
+          localSession.folderId = remoteSession.folderId;
+        }
       }
     });
 
@@ -153,7 +180,7 @@ export function mergeWithUpdate<T extends { lastUpdateTime?: number }>(
   remoteState: T,
 ) {
   const localUpdateTime = localState.lastUpdateTime ?? 0;
-  const remoteUpdateTime = localState.lastUpdateTime ?? 1;
+  const remoteUpdateTime = remoteState.lastUpdateTime ?? 1; // <-- was bug: used localState instead of remoteState
 
   if (localUpdateTime < remoteUpdateTime) {
     merge(remoteState, localState);

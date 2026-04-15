@@ -177,14 +177,31 @@
     height: var(--full-height);
     transition: all ease 0.3s;
     box-shadow: none;
+    padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) 16px;
   }
 
   .sidebar-show {
     left: 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
   }
 
   .mobile {
     display: block;
+  }
+
+  /* Bigger touch targets for chat items on mobile */
+  .chat-item {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+
+  .chat-item-title {
+    font-size: 14px;
+  }
+
+  /* Sidebar tail spacing for home bar */
+  .sidebar-tail {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   }
 }
 

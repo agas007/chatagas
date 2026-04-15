@@ -918,12 +918,101 @@
 }
 
 @media only screen and (max-width: 600px) {
+  /* ── Chat input area ── */
   .chat-input {
-    font-size: 16px;
+    font-size: 16px; /* prevents iOS zoom on focus */
+    padding: 14px 110px 14px 16px; /* tighter horizontal padding */
+    min-height: 50px;
   }
 
   .chat-input-send {
-    bottom: 30px;
+    bottom: 10px;
+    right: 10px;
+  }
+
+  /* ── Model pill ── */
+  .model-pill {
+    right: 52px;
+    bottom: 8px;
+    padding: 3px 8px;
+    font-size: 11px;
+
+    .model-pill-name {
+      max-width: 80px;
+    }
+  }
+
+  /* ── Input panel ── */
+  .chat-input-panel {
+    padding: 8px 12px env(safe-area-inset-bottom, 16px) 12px;
+  }
+
+  .chat-input-panel-inner {
+    border-radius: 18px;
+  }
+
+  /* ── Chat body ── */
+  .chat-body {
+    padding: 12px 12px 24px 12px;
+  }
+
+  /* ── Messages ── */
+  .chat-message {
+    max-width: 100%;
+  }
+
+  .chat-message-item {
+    font-size: 0.9625rem; /* slightly smaller on mobile for density */
+    line-height: 1.7;
+    border-radius: 14px;
+  }
+
+  /* ── Welcome screen ── */
+  .welcome-container {
+    padding: 40px 16px 24px;
+
+    .welcome-greeting {
+      font-size: 2rem;
+      margin-bottom: 24px;
+    }
+
+    .welcome-logo {
+      width: 42px;
+      height: 42px;
+      margin-bottom: 16px;
+    }
+  }
+
+  .welcome-suggestions {
+    gap: 8px;
+    margin-top: 16px;
+
+    .suggestion-button {
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+  }
+
+  /* ── Action buttons ── */
+  .chat-input-actions {
+    .chat-input-action {
+      height: 20px; /* larger touch target */
+    }
+  }
+
+  .chat-message-actions {
+    /* Always show on mobile (no hover) */
+    opacity: 1 !important;
+    pointer-events: all !important;
+    transform: scale(1) translateY(0) !important;
+  }
+
+  /* ── Record button ── */
+  .chat-input-record {
+    width: 34px;
+    height: 34px;
+    right: 10px;
+    bottom: 8px;
   }
 }
 
