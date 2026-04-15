@@ -126,138 +126,171 @@ function ProjectSection(props: {
   const { pathname: currentPath } = useLocation();
 
   return (
-    <div className={styles["project-section"]}>
-      {/* Header row */}
-      <div
-        className={styles["project-header"]}
-        onMouseEnter={() => setShowActions(true)}
-        onMouseLeave={() => setShowActions(false)}
-      >
-        <button
-          className={styles["project-collapse-btn"]}
-          onClick={() => setCollapsed((v) => !v)}
-          title={collapsed ? "Expand" : "Collapse"}
-        >
-          <span
-            className={clsx(styles["project-chevron"], {
-              [styles["project-chevron-collapsed"]]: collapsed,
-            })}
+    <Droppable droppableId={`folder-${props.folder.id}`}>
+      {(provided, snapshot) => {
+        // Auto-expand when dragging over
+        if (snapshot.isDraggingOver && collapsed) {
+          setCollapsed(false);
+        }
+
+        return (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={clsx(
+              styles["project-section"],
+              styles["project-droppable"],
+              {
+                [styles["project-droppable-active"]]: snapshot.isDraggingOver,
+              },
+            )}
           >
-            ▾
-          </span>
-        </button>
-
-        {editing ? (
-          <input
-            className={styles["project-name-input"]}
-            value={editName}
-            autoFocus
-            onChange={(e) => setEditName(e.currentTarget.value)}
-            onBlur={() => {
-              if (editName.trim()) props.onRename(props.folder.id, editName);
-              setEditing(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                if (editName.trim()) props.onRename(props.folder.id, editName);
-                setEditing(false);
-              }
-              if (e.key === "Escape") setEditing(false);
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <span
-            className={styles["project-name"]}
-            onDoubleClick={() => {
-              setEditName(props.folder.name);
-              setEditing(true);
-            }}
-          >
-            {props.folder.pinned ? "📌 " : ""}
-            {props.folder.name}
-          </span>
-        )}
-
-        <span className={styles["project-count"]}>{props.sessions.length}</span>
-
-        {showActions && !editing && (
-          <div className={styles["project-actions"]}>
-            <button
-              className={styles["project-action-btn"]}
-              title={props.folder.pinned ? "Unpin" : "Pin"}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onTogglePin(props.folder.id);
-              }}
+            {/* Header row */}
+            <div
+              className={styles["project-header"]}
+              onMouseEnter={() => setShowActions(true)}
+              onMouseLeave={() => setShowActions(false)}
             >
-              {props.folder.pinned ? "📌" : "☆"}
-            </button>
-            <button
-              className={styles["project-action-btn"]}
-              title="Rename"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditName(props.folder.name);
-                setEditing(true);
-              }}
-            >
-              ✏️
-            </button>
-            <button
-              className={clsx(
-                styles["project-action-btn"],
-                styles["project-action-delete"],
-              )}
-              title="Delete folder"
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (
-                  await showConfirm("Delete this project? Chats will be kept.")
-                )
-                  props.onDelete(props.folder.id);
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Chat items inside folder */}
-      {!collapsed && (
-        <div className={styles["project-chat-list"]}>
-          {props.sessions.length === 0 && (
-            <div className={styles["project-empty"]}>No chats yet</div>
-          )}
-          {props.sessions.map((item) => {
-            const originalIndex = props.allSessions.findIndex(
-              (s) => s.id === item.id,
-            );
-            const isSelected =
-              originalIndex === props.selectedIndex &&
-              (currentPath === Path.Chat || currentPath === Path.Home);
-            return (
-              <div
-                key={item.id}
-                className={clsx(styles["project-chat-item"], {
-                  [styles["project-chat-item-selected"]]: isSelected,
-                })}
-                onClick={() => {
-                  navigate(Path.Chat);
-                  props.onSelectSession(originalIndex);
-                }}
-                title={item.topic}
+              <button
+                className={styles["project-collapse-btn"]}
+                onClick={() => setCollapsed((v) => !v)}
+                title={collapsed ? "Expand" : "Collapse"}
               >
-                <span className={styles["project-chat-title"]}>
-                  {item.topic}
+                <span
+                  className={clsx(styles["project-chevron"], {
+                    [styles["project-chevron-collapsed"]]: collapsed,
+                  })}
+                >
+                  ▾
                 </span>
+              </button>
+
+              {editing ? (
+                <input
+                  className={styles["project-name-input"]}
+                  value={editName}
+                  autoFocus
+                  onChange={(e) => setEditName(e.currentTarget.value)}
+                  onBlur={() => {
+                    if (editName.trim())
+                      props.onRename(props.folder.id, editName);
+                    setEditing(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (editName.trim())
+                        props.onRename(props.folder.id, editName);
+                      setEditing(false);
+                    }
+                    if (e.key === "Escape") setEditing(false);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span
+                  className={styles["project-name"]}
+                  onDoubleClick={() => {
+                    setEditName(props.folder.name);
+                    setEditing(true);
+                  }}
+                >
+                  {props.folder.pinned ? "📌 " : ""}
+                  {props.folder.name}
+                </span>
+              )}
+
+              <span className={styles["project-count"]}>
+                {props.sessions.length}
+              </span>
+
+              {showActions && !editing && (
+                <div className={styles["project-actions"]}>
+                  <button
+                    className={styles["project-action-btn"]}
+                    title={props.folder.pinned ? "Unpin" : "Pin"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      props.onTogglePin(props.folder.id);
+                    }}
+                  >
+                    {props.folder.pinned ? "📌" : "☆"}
+                  </button>
+                  <button
+                    className={styles["project-action-btn"]}
+                    title="Rename"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditName(props.folder.name);
+                      setEditing(true);
+                    }}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className={clsx(
+                      styles["project-action-btn"],
+                      styles["project-action-delete"],
+                    )}
+                    title="Delete folder"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (
+                        await showConfirm(
+                          "Delete this project? Chats will be kept.",
+                        )
+                      )
+                        props.onDelete(props.folder.id);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Chat items inside folder */}
+            {!collapsed && (
+              <div className={styles["project-chat-list"]}>
+                {props.sessions.length === 0 && !snapshot.isDraggingOver && (
+                  <div className={styles["project-empty"]}>No chats yet</div>
+                )}
+                {props.sessions.map((item, i) => {
+                  const originalIndex = props.allSessions.findIndex(
+                    (s) => s.id === item.id,
+                  );
+                  const isSelected =
+                    originalIndex === props.selectedIndex &&
+                    (currentPath === Path.Chat || currentPath === Path.Home);
+                  return (
+                    <Draggable key={item.id} draggableId={item.id} index={i}>
+                      {(provided) => (
+                        <div
+                          className={clsx(styles["project-chat-item"], {
+                            [styles["project-chat-item-selected"]]: isSelected,
+                          })}
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          onClick={() => {
+                            navigate(Path.Chat);
+                            props.onSelectSession(originalIndex);
+                          }}
+                          title={item.topic}
+                        >
+                          <span className={styles["project-chat-title"]}>
+                            {item.topic}
+                          </span>
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+            )}
+          </div>
+        );
+      }}
+    </Droppable>
   );
 }
 
@@ -306,22 +339,55 @@ export function ChatList(props: { narrow?: boolean }) {
   }, [sessions]);
 
   const onDragEnd: OnDragEndResponder = (result) => {
-    const { destination, source } = result;
+    const { destination, source, draggableId } = result;
     if (!destination) return;
+
+    const sourceDroppable = source.droppableId;
+    const destDroppable = destination.droppableId;
+
     if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    )
+      sourceDroppable === destDroppable &&
+      source.index === destination.index
+    ) {
       return;
+    }
 
-    const sourceSession = ungroupedSessions[source.index];
-    const destinationSession = ungroupedSessions[destination.index];
-    if (!sourceSession || !destinationSession) return;
+    const sessionId = draggableId;
+    const fromMasterIndex = sessions.findIndex((s) => s.id === sessionId);
 
-    const from = sessions.findIndex((s) => s.id === sourceSession.id);
-    const to = sessions.findIndex((s) => s.id === destinationSession.id);
-    if (from < 0 || to < 0) return;
-    moveSession(from, to);
+    // 1. Update folder assignment if moving between different droppables
+    if (sourceDroppable !== destDroppable) {
+      if (destDroppable.startsWith("folder-")) {
+        const folderId = destDroppable.replace("folder-", "");
+        assignSessionFolder(sessionId, folderId);
+      } else if (destDroppable === "chat-list") {
+        assignSessionFolder(sessionId, undefined);
+      }
+    }
+
+    // 2. Handle Reordering
+    // Get target list (either ungrouped or a folder's sessions)
+    let targetList: ChatSession[] = [];
+    if (destDroppable === "chat-list") {
+      targetList = ungroupedSessions;
+    } else if (destDroppable.startsWith("folder-")) {
+      const folderId = destDroppable.replace("folder-", "");
+      targetList = sessionsByFolder[folderId] ?? [];
+    }
+
+    // Find master index of destination
+    const targetItem = targetList[destination.index];
+    let toMasterIndex = -1;
+    if (targetItem) {
+      toMasterIndex = sessions.findIndex((s) => s.id === targetItem.id);
+    } else {
+      // dropped at end of list
+      toMasterIndex = sessions.length - 1;
+    }
+
+    if (fromMasterIndex !== -1 && toMasterIndex !== -1) {
+      moveSession(fromMasterIndex, toMasterIndex);
+    }
   };
 
   if (props.narrow) {
@@ -371,51 +437,51 @@ export function ChatList(props: { narrow?: boolean }) {
   }
 
   return (
-    <div className={styles["sidebar-projects-container"]}>
-      {/* Projects section header */}
-      {sortedFolders.length > 0 && (
-        <div className={styles["sidebar-section-label"]}>Projects</div>
-      )}
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className={styles["sidebar-projects-container"]}>
+        {/* Projects section header */}
+        {sortedFolders.length > 0 && (
+          <div className={styles["sidebar-section-label"]}>Projects</div>
+        )}
 
-      {/* Render each folder as a project section */}
-      {sortedFolders.map((folder, idx) => (
-        <ProjectSection
-          key={folder.id}
-          folder={folder}
-          sessions={sessionsByFolder[folder.id] ?? []}
-          allSessions={sessions}
-          selectedIndex={selectedIndex}
-          folderIndex={idx}
-          onSelectSession={(i) => selectSession(i)}
-          onDeleteSession={(i) => chatStore.deleteSession(i)}
-          onRename={(id, name) => renameFolder(id, name)}
-          onDelete={(id) => deleteFolder(id)}
-          onTogglePin={(id) => togglePinFolder(id)}
-        />
-      ))}
+        {/* Render each folder as a project section */}
+        {sortedFolders.map((folder, idx) => (
+          <ProjectSection
+            key={folder.id}
+            folder={folder}
+            sessions={sessionsByFolder[folder.id] ?? []}
+            allSessions={sessions}
+            selectedIndex={selectedIndex}
+            folderIndex={idx}
+            onSelectSession={(i) => selectSession(i)}
+            onDeleteSession={(i) => chatStore.deleteSession(i)}
+            onRename={(id, name) => renameFolder(id, name)}
+            onDelete={(id) => deleteFolder(id)}
+            onTogglePin={(id) => togglePinFolder(id)}
+          />
+        ))}
 
-      {/* New project button */}
-      <button
-        className={styles["new-project-btn"]}
-        onClick={async () => {
-          const name = await showPrompt("Project name", "", 2);
-          if (name.trim()) createFolder(name);
-        }}
-      >
-        <span className={styles["new-project-icon"]}>＋</span> New project
-      </button>
-
-      {/* Ungrouped chats */}
-      {ungroupedSessions.length > 0 && (
-        <div
-          className={styles["sidebar-section-label"]}
-          style={{ marginTop: 20 }}
+        {/* New project button */}
+        <button
+          className={styles["new-project-btn"]}
+          onClick={async () => {
+            const name = await showPrompt("Project name", "", 2);
+            if (name.trim()) createFolder(name);
+          }}
         >
-          Chats
-        </div>
-      )}
+          <span className={styles["new-project-icon"]}>＋</span> New project
+        </button>
 
-      <DragDropContext onDragEnd={onDragEnd}>
+        {/* Ungrouped chats */}
+        {ungroupedSessions.length > 0 && (
+          <div
+            className={styles["sidebar-section-label"]}
+            style={{ marginTop: 20 }}
+          >
+            Chats
+          </div>
+        )}
+
         <Droppable droppableId="chat-list">
           {(provided) => (
             <div
@@ -462,7 +528,7 @@ export function ChatList(props: { narrow?: boolean }) {
             </div>
           )}
         </Droppable>
-      </DragDropContext>
-    </div>
+      </div>
+    </DragDropContext>
   );
 }

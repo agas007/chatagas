@@ -451,6 +451,19 @@
   }
 }
 
+.project-droppable {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  margin: 0 4px;
+}
+
+.project-droppable-active {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  border-color: var(--primary);
+  border-style: dashed;
+}
+
 .project-chat-list {
   padding-left: 20px;
   margin-bottom: 4px;
