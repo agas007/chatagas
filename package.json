@@ -51,7 +51,7 @@
     "openapi-client-axios": "^7.5.5",
     "pdfjs-dist": "4.10.38",
     "pg": "^8.20.0",
-    "prisma": "6",
+    "prisma": "7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-draggable": "^4.5.0",
