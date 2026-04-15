@@ -314,6 +314,17 @@ export function ChatList(props: { narrow?: boolean }) {
   const navigate = useNavigate();
   const isMobileScreen = useMobileScreen();
 
+  const [renderedCount, setRenderedCount] = useState(20);
+
+  useEffect(() => {
+    if (renderedCount < sessions.length) {
+      const timer = setTimeout(() => {
+        setRenderedCount((prev) => Math.min(prev + 50, sessions.length));
+      }, 500); // incrementally load more chats
+      return () => clearTimeout(timer);
+    }
+  }, [renderedCount, sessions.length]);
+
   const sortedFolders = useMemo(
     () =>
       folders.slice().sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned)),
@@ -401,33 +412,35 @@ export function ChatList(props: { narrow?: boolean }) {
               ref={provided.innerRef}
               {...provided.droppableProps}
             >
-              {sessions.map((item: ChatSession, i: number) => (
-                <ChatItem
-                  title={item.topic}
-                  time={new Date(item.lastUpdate).toLocaleString()}
-                  count={item.messages.length}
-                  key={item.id}
-                  id={item.id}
-                  index={i}
-                  selected={i === selectedIndex}
-                  onClick={() => {
-                    navigate(Path.Chat);
-                    selectSession(i);
-                  }}
-                  onDelete={async () => {
-                    if (await showConfirm(Locale.Home.DeleteChat)) {
-                      chatStore.deleteSession(i);
+              {sessions
+                .slice(0, renderedCount)
+                .map((item: ChatSession, i: number) => (
+                  <ChatItem
+                    title={item.topic}
+                    time={new Date(item.lastUpdate).toLocaleString()}
+                    count={item.messages.length}
+                    key={item.id}
+                    id={item.id}
+                    index={i}
+                    selected={i === selectedIndex}
+                    onClick={() => {
+                      navigate(Path.Chat);
+                      selectSession(i);
+                    }}
+                    onDelete={async () => {
+                      if (await showConfirm(Locale.Home.DeleteChat)) {
+                        chatStore.deleteSession(i);
+                      }
+                    }}
+                    onMoveFolder={(folderId) =>
+                      assignSessionFolder(item.id, folderId)
                     }
-                  }}
-                  onMoveFolder={(folderId) =>
-                    assignSessionFolder(item.id, folderId)
-                  }
-                  folderId={item.folderId}
-                  folders={folders}
-                  narrow={true}
-                  mask={item.mask}
-                />
-              ))}
+                    folderId={item.folderId}
+                    folders={folders}
+                    narrow={true}
+                    mask={item.mask}
+                  />
+                ))}
               {provided.placeholder}
             </div>
           )}
@@ -489,41 +502,43 @@ export function ChatList(props: { narrow?: boolean }) {
               ref={provided.innerRef}
               {...provided.droppableProps}
             >
-              {ungroupedSessions.map((item: ChatSession, i: number) => {
-                const originalIndex = sessions.findIndex(
-                  (s) => s.id === item.id,
-                );
-                return (
-                  <ChatItem
-                    title={item.topic}
-                    time={new Date(item.lastUpdate).toLocaleString()}
-                    count={item.messages.length}
-                    key={item.id}
-                    id={item.id}
-                    index={i}
-                    selected={originalIndex === selectedIndex}
-                    onClick={() => {
-                      navigate(Path.Chat);
-                      selectSession(originalIndex);
-                    }}
-                    onDelete={async () => {
-                      if (
-                        !isMobileScreen ||
-                        (await showConfirm(Locale.Home.DeleteChat))
-                      ) {
-                        chatStore.deleteSession(originalIndex);
+              {ungroupedSessions
+                .slice(0, renderedCount)
+                .map((item: ChatSession, i: number) => {
+                  const originalIndex = sessions.findIndex(
+                    (s) => s.id === item.id,
+                  );
+                  return (
+                    <ChatItem
+                      title={item.topic}
+                      time={new Date(item.lastUpdate).toLocaleString()}
+                      count={item.messages.length}
+                      key={item.id}
+                      id={item.id}
+                      index={i}
+                      selected={originalIndex === selectedIndex}
+                      onClick={() => {
+                        navigate(Path.Chat);
+                        selectSession(originalIndex);
+                      }}
+                      onDelete={async () => {
+                        if (
+                          !isMobileScreen ||
+                          (await showConfirm(Locale.Home.DeleteChat))
+                        ) {
+                          chatStore.deleteSession(originalIndex);
+                        }
+                      }}
+                      onMoveFolder={(folderId) =>
+                        assignSessionFolder(item.id, folderId)
                       }
-                    }}
-                    onMoveFolder={(folderId) =>
-                      assignSessionFolder(item.id, folderId)
-                    }
-                    folderId={item.folderId}
-                    folders={folders}
-                    narrow={false}
-                    mask={item.mask}
-                  />
-                );
-              })}
+                      folderId={item.folderId}
+                      folders={folders}
+                      narrow={false}
+                      mask={item.mask}
+                    />
+                  );
+                })}
               {provided.placeholder}
             </div>
           )}

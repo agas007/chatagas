@@ -245,9 +245,16 @@ export function useLoadData() {
   const api: ClientApi = getClientApi(config.modelConfig.providerName);
 
   useEffect(() => {
+    // Only load if models list is mostly empty (defaults only)
+    if (config.models.length > 20) return;
+
     (async () => {
-      const models = await api.llm.models();
-      config.mergeModels(models);
+      try {
+        const models = await api.llm.models();
+        config.mergeModels(models);
+      } catch (e) {
+        console.error("[Config] failed to fetch models", e);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -277,9 +284,11 @@ export function Home() {
       try {
         const enabled = await isMcpEnabled();
         if (enabled) {
-          console.log("[MCP] initializing...");
-          await initializeMcpSystem();
-          console.log("[MCP] initialized");
+          // Defer MCP initialization to avoid blocking the initial UI render
+          setTimeout(async () => {
+            console.log("[MCP] initializing in background...");
+            await initializeMcpSystem();
+          }, 3000); // 3s delay
         }
       } catch (err) {
         console.error("[MCP] failed to initialize:", err);
