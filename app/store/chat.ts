@@ -240,6 +240,8 @@ const DEFAULT_CHAT_STATE = {
   activeFolderId: "all",
   currentSessionIndex: 0,
   lastInput: "",
+  deletedSessionIds: [] as string[],
+  deletedFolderIds: [] as string[],
 };
 
 export const useChatStore = createPersistStore(
@@ -340,16 +342,13 @@ export const useChatStore = createPersistStore(
         }));
       },
 
-      deleteFolder(folderId: string) {
+      deleteFolder(id: string) {
         set((state) => ({
-          folders: state.folders.filter((folder) => folder.id !== folderId),
-          activeFolderId:
-            state.activeFolderId === folderId ? "all" : state.activeFolderId,
-          sessions: state.sessions.map((session) =>
-            session.folderId === folderId
-              ? { ...session, folderId: undefined }
-              : session,
+          folders: state.folders.filter((f) => f.id !== id),
+          sessions: state.sessions.map((s) =>
+            s.folderId === id ? { ...s, folderId: undefined } : s,
           ),
+          deletedFolderIds: [...(state.deletedFolderIds || []), id],
         }));
       },
 
@@ -475,9 +474,13 @@ export const useChatStore = createPersistStore(
           sessions: get().sessions.slice(),
         };
 
-        set(() => ({
+        set((state) => ({
           currentSessionIndex: nextIndex,
           sessions,
+          deletedSessionIds: [
+            ...(state.deletedSessionIds || []),
+            deletedSession.id,
+          ],
         }));
 
         showToast(

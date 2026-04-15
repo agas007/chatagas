@@ -64,13 +64,57 @@ type StateMerger = {
 // we merge remote state to local state
 const MergeStates: StateMerger = {
   [StoreKey.Chat]: (localState, remoteState) => {
+    // merge deleted markers
+    const allDeletedSessionIds = new Set([
+      ...(localState.deletedSessionIds || []),
+      ...(remoteState.deletedSessionIds || []),
+    ]);
+    const allDeletedFolderIds = new Set([
+      ...(localState.deletedFolderIds || []),
+      ...(remoteState.deletedFolderIds || []),
+    ]);
+
+    localState.deletedSessionIds = Array.from(allDeletedSessionIds);
+    localState.deletedFolderIds = Array.from(allDeletedFolderIds);
+
+    // merge folders first
+    if (remoteState.folders && remoteState.folders.length > 0) {
+      const localFolderIds = new Set(
+        (localState.folders || []).map((f) => f.id),
+      );
+      remoteState.folders.forEach((remoteFolder) => {
+        // Skip if this folder was deleted anywhere
+        if (allDeletedFolderIds.has(remoteFolder.id)) return;
+
+        if (!localFolderIds.has(remoteFolder.id)) {
+          localState.folders = localState.folders || [];
+          localState.folders.push(remoteFolder);
+        } else {
+          // Update the folder name/pin if remote is newer
+          const localFolder = localState.folders.find(
+            (f) => f.id === remoteFolder.id,
+          );
+          if (localFolder && remoteFolder.createdAt > localFolder.createdAt) {
+            localFolder.name = remoteFolder.name;
+            localFolder.pinned = remoteFolder.pinned;
+          }
+        }
+      });
+    }
+
+    // cleanup local folders that might have been deleted remotely
+    localState.folders = (localState.folders || []).filter(
+      (f) => !allDeletedFolderIds.has(f.id),
+    );
+
     // merge sessions
     const localSessions: Record<string, ChatSession> = {};
     localState.sessions.forEach((s) => (localSessions[s.id] = s));
 
     remoteState.sessions.forEach((remoteSession) => {
-      // skip empty chats
+      // skip empty chats or deleted chats
       if (remoteSession.messages.length === 0) return;
+      if (allDeletedSessionIds.has(remoteSession.id)) return;
 
       const localSession = localSessions[remoteSession.id];
       if (!localSession) {
@@ -89,8 +133,18 @@ const MergeStates: StateMerger = {
         localSession.messages.sort(
           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
         );
+
+        // sync folderId from whichever is newer
+        if (remoteSession.lastUpdate > localSession.lastUpdate) {
+          localSession.folderId = remoteSession.folderId;
+        }
       }
     });
+
+    // cleanup local sessions that might have been deleted remotely
+    localState.sessions = localState.sessions.filter(
+      (s) => !allDeletedSessionIds.has(s.id),
+    );
 
     // sort local sessions with date field in desc order
     localState.sessions.sort(
@@ -153,7 +207,7 @@ export function mergeWithUpdate<T extends { lastUpdateTime?: number }>(
   remoteState: T,
 ) {
   const localUpdateTime = localState.lastUpdateTime ?? 0;
-  const remoteUpdateTime = localState.lastUpdateTime ?? 1;
+  const remoteUpdateTime = remoteState.lastUpdateTime ?? 1; // <-- was bug: used localState instead of remoteState
 
   if (localUpdateTime < remoteUpdateTime) {
     merge(remoteState, localState);

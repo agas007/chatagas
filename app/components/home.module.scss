@@ -1,3 +1,5 @@
+@use "../styles/animation.scss" as *;
+
 @mixin container {
   background-color: var(--white);
   border: 0;
@@ -175,14 +177,31 @@
     height: var(--full-height);
     transition: all ease 0.3s;
     box-shadow: none;
+    padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) 16px;
   }
 
   .sidebar-show {
     left: 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
   }
 
   .mobile {
     display: block;
+  }
+
+  /* Bigger touch targets for chat items on mobile */
+  .chat-item {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+
+  .chat-item-title {
+    font-size: 14px;
+  }
+
+  /* Sidebar tail spacing for home bar */
+  .sidebar-tail {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   }
 }
 
@@ -285,147 +304,235 @@
   animation: slide-in ease 0.3s;
 }
 
-.chat-item-folder-row {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.chat-item-folder-label {
-  font-size: 11px;
-  color: rgb(166, 166, 166);
-}
+/* ── Old folder classes (kept for backwards compat, now unused in UI) ── */
+.chat-item-folder-row { display: none; } /* hidden – folder assignment now in project sections */
+.chat-item-folder-label { display: none; }
+.chat-item-folder-select { display: none; }
+.chat-folder-toolbar { display: none; }
+.chat-folder-filter { display: none; }
+.chat-folder-button { display: none; }
+.chat-folder-list { display: none; }
+.chat-folder-toggle { display: none; }
+.chat-folder-item { display: none; }
+.chat-folder-head { display: none; }
+.chat-folder-drag { display: none; }
+.chat-folder-name { display: none; }
+.chat-folder-input { display: none; }
+.chat-folder-badge { display: none; }
+.chat-folder-actions { display: none; }
+.chat-folder-action-button { display: none; }
+.chat-folder-drop { display: none; }
 
-.chat-item-folder-select {
-  flex: 1;
-  min-width: 0;
-  border: var(--border-in-light);
-  border-radius: 6px;
-  padding: 3px 6px;
-  background: var(--white);
-  color: var(--black);
-}
-
-.chat-folder-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.chat-folder-filter {
-  flex: 1;
-  min-width: 0;
-  border: var(--border-in-light);
-  border-radius: 8px;
-  padding: 6px 8px;
-  background: var(--white);
-  color: var(--black);
-}
-
-.chat-folder-button {
-  border: var(--border-in-light);
-  border-radius: 8px;
-  background: var(--white);
-  color: var(--black);
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.chat-folder-list {
-  margin-bottom: 12px;
+/* ── Projects container ── */
+.sidebar-projects-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-.chat-folder-toggle {
-  border: var(--border-in-light);
-  border-radius: 8px;
-  background: var(--second);
+.sidebar-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--black);
-  padding: 6px 10px;
-  cursor: pointer;
+  opacity: 0.45;
+  padding: 0 4px;
+  margin-bottom: 6px;
+  margin-top: 4px;
+  user-select: none;
 }
 
-.chat-folder-item {
-  border: var(--border-in-light);
+/* ── Project (folder) section ── */
+.project-section {
+  margin-bottom: 4px;
+}
+
+.project-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
   border-radius: 8px;
-  padding: 8px;
-  background: var(--white);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  position: relative;
+
+  &:hover {
+    background-color: var(--hover-color);
+  }
 }
 
-.chat-folder-head {
+.project-collapse-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--black);
+  opacity: 0.5;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.project-chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 13px;
+}
+
+.project-chevron-collapsed {
+  transform: rotate(-90deg);
+}
+
+.project-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.project-name-input {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--primary);
+  border-radius: 5px;
+  padding: 2px 6px;
+  color: var(--black);
+  background: var(--white);
+  outline: none;
+  min-width: 0;
+  text-align: left;
+  max-width: 100%;
+}
+
+.project-count {
+  font-size: 11px;
+  color: var(--black);
+  opacity: 0.4;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.project-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  animation: slide-in ease 0.15s;
+}
+
+.project-action-btn {
+  background: none;
+  border: none;
+  padding: 3px 5px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--black);
+  opacity: 0.6;
+  transition: background-color 0.15s, opacity 0.15s;
+  line-height: 1;
+
+  &:hover {
+    background-color: var(--second);
+    opacity: 1;
+  }
+}
+
+.project-action-delete {
+  &:hover {
+    color: #e53e3e;
+  }
+}
+
+.project-droppable {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  margin: 0 4px;
+}
+
+.project-droppable-active {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  border-color: var(--primary);
+  border-style: dashed;
+}
+
+.project-chat-list {
+  padding-left: 20px;
+  margin-bottom: 4px;
+}
+
+.project-empty {
+  font-size: 12px;
+  color: var(--black);
+  opacity: 0.35;
+  padding: 4px 8px;
+  font-style: italic;
+}
+
+.project-chat-item {
+  padding: 5px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  margin-bottom: 1px;
+
+  &:hover {
+    background-color: var(--hover-color);
+  }
+}
+
+.project-chat-item-selected {
+  border-left-color: var(--primary);
+  background-color: var(--hover-color);
+}
+
+.project-chat-title {
+  font-size: 13px;
+  color: var(--black);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* New project button */
+.new-project-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
-}
-
-.chat-folder-drag {
-  border: var(--border-in-light);
-  border-radius: 6px;
-  background: var(--second);
-  color: var(--black);
-  padding: 2px 6px;
-  cursor: grab;
-}
-
-.chat-folder-name {
-  background: transparent;
-  border: 0;
-  color: var(--black);
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-  margin-bottom: 0;
-  text-align: left;
-  flex: 1;
-}
-
-.chat-folder-input {
-  border: var(--border-in-light);
-  border-radius: 6px;
-  padding: 4px 6px;
-  color: var(--black);
-  background: var(--white);
-  flex: 1;
-}
-
-.chat-folder-badge {
-  border-radius: 999px;
-  background: var(--primary);
-  color: white;
-  font-size: 11px;
-  line-height: 1;
-  padding: 4px 7px;
-}
-
-.chat-folder-actions {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 6px;
-  flex-wrap: wrap;
-}
-
-.chat-folder-action-button {
-  border: var(--border-in-light);
-  border-radius: 6px;
-  background: var(--second);
-  color: var(--black);
-  padding: 2px 8px;
-  cursor: pointer;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border-in-light);
+  border-radius: 8px;
+  padding: 6px 10px;
   font-size: 12px;
+  color: var(--black);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+
+  &:hover {
+    opacity: 1;
+    background-color: var(--hover-color);
+    border-style: solid;
+    border-color: var(--primary);
+    color: var(--primary);
+  }
 }
 
-.chat-folder-drop {
-  border: 1px dashed var(--primary);
-  border-radius: 6px;
-  color: var(--black);
-  font-size: 12px;
-  opacity: 0.8;
-  padding: 6px 8px;
+.new-project-icon {
+  font-size: 14px;
+  font-weight: 300;
 }
 
 .chat-item-count,

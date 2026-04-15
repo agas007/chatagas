@@ -2,7 +2,7 @@
 
 require("../polyfill");
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./home.module.scss";
 
 import BotIcon from "../icons/bot.svg";
@@ -35,6 +35,7 @@ import { VERSION } from "../version";
 import { useSession } from "next-auth/react";
 import { useSyncStore } from "../store/sync";
 import { ProviderType } from "../utils/cloud";
+import { useChatStore } from "../store/chat";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -244,9 +245,16 @@ export function useLoadData() {
   const api: ClientApi = getClientApi(config.modelConfig.providerName);
 
   useEffect(() => {
+    // Only load if models list is mostly empty (defaults only)
+    if (config.models.length > 20) return;
+
     (async () => {
-      const models = await api.llm.models();
-      config.mergeModels(models);
+      try {
+        const models = await api.llm.models();
+        config.mergeModels(models);
+      } catch (e) {
+        console.error("[Config] failed to fetch models", e);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -276,9 +284,11 @@ export function Home() {
       try {
         const enabled = await isMcpEnabled();
         if (enabled) {
-          console.log("[MCP] initializing...");
-          await initializeMcpSystem();
-          console.log("[MCP] initialized");
+          // Defer MCP initialization to avoid blocking the initial UI render
+          setTimeout(async () => {
+            console.log("[MCP] initializing in background...");
+            await initializeMcpSystem();
+          }, 3000); // 3s delay
         }
       } catch (err) {
         console.error("[MCP] failed to initialize:", err);
@@ -289,18 +299,64 @@ export function Home() {
 
   const { data: session, status } = useSession();
   const syncStore = useSyncStore();
+  const chatStore = useChatStore();
+  const autoSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAuthenticated = status === "authenticated" && !!session?.user;
 
+  // ── Initial sync on login ──
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (isAuthenticated) {
       if (syncStore.provider !== ProviderType.LocalServer) {
         syncStore.update((state) => {
           state.provider = ProviderType.LocalServer;
         });
-        // Initial sync when login
-        syncStore.sync();
       }
+      // Pull from server first
+      syncStore
+        .sync()
+        .catch((e) => console.error("[Sync] initial pull failed", e));
     }
-  }, [status, session, syncStore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  // ── Auto-push changes (debounced 30s) ──
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Subscribe to chat store changes and debounce push
+    const unsub = useChatStore.subscribe(() => {
+      if (autoSyncTimer.current) clearTimeout(autoSyncTimer.current);
+      autoSyncTimer.current = setTimeout(() => {
+        syncStore
+          .sync()
+          .catch((e) => console.warn("[Sync] auto-push failed", e));
+      }, 30_000); // push 30s after last change
+    });
+
+    // Also push on page unload to capture final state
+    const onUnload = () => {
+      syncStore.sync().catch(() => {});
+    };
+    window.addEventListener("beforeunload", onUnload);
+
+    // Periodic pull every 2 min to catch changes from other devices
+    const pullInterval = setInterval(
+      () => {
+        syncStore
+          .sync()
+          .catch((e) => console.warn("[Sync] periodic sync failed", e));
+      },
+      2 * 60 * 1000,
+    );
+
+    return () => {
+      unsub();
+      window.removeEventListener("beforeunload", onUnload);
+      clearInterval(pullInterval);
+      if (autoSyncTimer.current) clearTimeout(autoSyncTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const hasHydrated = useHasHydrated();
   if (status === "loading" || !hasHydrated) {
