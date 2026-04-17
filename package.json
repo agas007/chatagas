@@ -107,7 +107,7 @@
     "tsx": "^4.19.3",
     "typescript": "^6.0.2",
     "watch": "^1.0.2",
-    "webpack": "^5.98.0"
+    "webpack": "^5.106.2"
   },
   "resolutions": {
     "**/@eslint/eslintrc/minimatch": "^3.1.2",
