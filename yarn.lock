@@ -1044,10 +1044,10 @@
   dependencies:
     tslib "^2.1.0"
 
-"@capacitor/ios@^8.3.0":
-  version "8.3.0"
-  resolved "https://registry.yarnpkg.com/@capacitor/ios/-/ios-8.3.0.tgz#64c56a09b176ddd171e4e7f7e3681d8e557b95d7"
-  integrity sha512-5Rtwv8SITKlYTt8lAZG+khnVIdzPtqbocH3eP+JkEmX1vpSMwx4TOKtT8OBz8gpQ+pUJDRp7DBYOv3U6l/obCw==
+"@capacitor/ios@^8.3.1":
+  version "8.3.1"
+  resolved "https://registry.yarnpkg.com/@capacitor/ios/-/ios-8.3.1.tgz#bd97244869dcf9bb1e5a76ce32145b78cfa95120"
+  integrity sha512-BEhLyYYHWJLib4mpaPMaaylbC8meqgxbNYwQJH2svsSLW7yo/hFie+Zoo66a44XnqcMd2tvmAuzimWunXZi/xA==
 
 "@chevrotain/cst-dts-gen@11.1.2":
   version "11.1.2"
