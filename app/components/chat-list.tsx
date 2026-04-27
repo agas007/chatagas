@@ -1,4 +1,6 @@
 import DeleteIcon from "../icons/delete.svg";
+import EditIcon from "../icons/edit.svg";
+import PromptIcon from "../icons/prompt.svg";
 
 import styles from "./home.module.scss";
 import {
@@ -107,7 +109,12 @@ export function ChatItem(props: {
 
 /** Collapsible project/folder section in the sidebar, Claude-style */
 function ProjectSection(props: {
-  folder: { id: string; name: string; pinned?: boolean };
+  folder: {
+    id: string;
+    name: string;
+    pinned?: boolean;
+    prompt?: string;
+  };
   sessions: ChatSession[];
   selectedIndex: number;
   allSessions: ChatSession[];
@@ -115,6 +122,7 @@ function ProjectSection(props: {
   onSelectSession: (originalIndex: number) => void;
   onDeleteSession: (originalIndex: number) => void;
   onRename: (id: string, name: string) => void;
+  onUpdatePrompt: (id: string, prompt: string) => void;
   onDelete: (id: string) => void;
   onTogglePin: (id: string) => void;
 }) {
@@ -207,6 +215,21 @@ function ProjectSection(props: {
                 <div className={styles["project-actions"]}>
                   <button
                     className={styles["project-action-btn"]}
+                    title="Edit project instructions"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const prompt = await showPrompt(
+                        "Project instructions",
+                        props.folder.prompt || "",
+                        12,
+                      );
+                      props.onUpdatePrompt(props.folder.id, prompt);
+                    }}
+                  >
+                    <PromptIcon />
+                  </button>
+                  <button
+                    className={styles["project-action-btn"]}
                     title={props.folder.pinned ? "Unpin" : "Pin"}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -224,7 +247,7 @@ function ProjectSection(props: {
                       setEditing(true);
                     }}
                   >
-                    ✏️
+                    <EditIcon />
                   </button>
                   <button
                     className={clsx(
@@ -246,6 +269,12 @@ function ProjectSection(props: {
                   </button>
                 </div>
               )}
+
+              {!editing && props.folder.prompt?.trim() ? (
+                <div className={styles["project-prompt-preview"]}>
+                  {props.folder.prompt.trim().split("\n")[0]}
+                </div>
+              ) : null}
             </div>
 
             {/* Chat items inside folder */}
@@ -305,6 +334,7 @@ export function ChatList(props: { narrow?: boolean }) {
   const createFolder = useChatStore((state) => state.createFolder);
   const deleteFolder = useChatStore((state) => state.deleteFolder);
   const renameFolder = useChatStore((state) => state.renameFolder);
+  const updateFolderPrompt = useChatStore((state) => state.updateFolderPrompt);
   const reorderFolder = useChatStore((state) => state.reorderFolder);
   const togglePinFolder = useChatStore((state) => state.togglePinFolder);
   const assignSessionFolder = useChatStore(
@@ -469,6 +499,7 @@ export function ChatList(props: { narrow?: boolean }) {
             onSelectSession={(i) => selectSession(i)}
             onDeleteSession={(i) => chatStore.deleteSession(i)}
             onRename={(id, name) => renameFolder(id, name)}
+            onUpdatePrompt={(id, prompt) => updateFolderPrompt(id, prompt)}
             onDelete={(id) => deleteFolder(id)}
             onTogglePin={(id) => togglePinFolder(id)}
           />

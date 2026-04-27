@@ -5,6 +5,7 @@ import { getClientConfig } from "./config/client";
 import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 import { getServerSideConfig } from "./config/server";
 import { AuthProvider } from "./components/auth/provider";
 
@@ -47,7 +48,7 @@ export default function RootLayout({
           href="/manifest.json"
           crossOrigin="use-credentials"
         ></link>
-        <script src="/serviceWorkerRegister.js" defer></script>
+        <Script src="/serviceWorkerRegister.js" strategy="afterInteractive" />
       </head>
       <body suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>

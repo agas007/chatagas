@@ -90,13 +90,22 @@ const MergeStates: StateMerger = {
           localState.folders = localState.folders || [];
           localState.folders.push(remoteFolder);
         } else {
-          // Update the folder name/pin if remote is newer
+          // Update the folder content if remote is newer
           const localFolder = localState.folders.find(
             (f) => f.id === remoteFolder.id,
           );
-          if (localFolder && remoteFolder.createdAt > localFolder.createdAt) {
+          if (
+            localFolder &&
+            (remoteFolder.updatedAt ?? remoteFolder.createdAt) >
+              (localFolder.updatedAt ?? localFolder.createdAt)
+          ) {
             localFolder.name = remoteFolder.name;
             localFolder.pinned = remoteFolder.pinned;
+            localFolder.prompt = remoteFolder.prompt ?? localFolder.prompt;
+            localFolder.knowledge =
+              remoteFolder.knowledge ?? localFolder.knowledge;
+            localFolder.updatedAt =
+              remoteFolder.updatedAt ?? remoteFolder.createdAt;
           }
         }
       });

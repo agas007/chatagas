@@ -43,7 +43,7 @@
   width: var(--sidebar-width);
   box-sizing: border-box;
   padding: 20px;
-  background-color: var(--gray);
+  background: var(--gray);
   display: flex;
   flex-direction: column;
   box-shadow: none;
@@ -60,9 +60,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px;
-      background-color: var(--white);
-      border-radius: 12px;
+      gap: 12px;
+      padding: 14px;
+      background: var(--white);
+      border: 1px solid var(--border-in-light);
+      border-radius: 18px;
       margin-bottom: 12px;
       box-shadow: var(--card-shadow);
       width: 100%;
@@ -75,7 +77,7 @@
 
         .sidebar-account-name {
           font-size: 13px;
-          font-weight: bold;
+          font-weight: 700;
           color: var(--black);
           white-space: nowrap;
           overflow: hidden;
@@ -86,7 +88,9 @@
           font-size: 10px;
           color: var(--primary);
           font-weight: 600;
-          margin-top: 2px;
+          margin-top: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
         }
       }
     }
@@ -94,7 +98,7 @@
     .sidebar-account-guest {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       margin-bottom: 12px;
       width: 100%;
 
@@ -110,6 +114,7 @@
     .sidebar-bar-button {
       flex-grow: 1;
       width: 100%;
+      border-radius: 14px;
 
       &:not(:last-child) {
         margin-bottom: 10px;
@@ -207,8 +212,8 @@
 
 .sidebar-header {
   position: relative;
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: 10px;
+  padding-bottom: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -228,13 +233,15 @@
 
 .sidebar-title {
   font-size: 20px;
-  font-weight: bold;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   animation: slide-in ease 0.3s;
 }
 
 .sidebar-sub-title {
   font-size: 12px;
   font-weight: 400;
+  opacity: 0.7;
   animation: slide-in ease 0.3s;
 }
 
@@ -246,24 +253,26 @@
 
 .chat-item {
   padding: 10px 14px;
-  background-color: var(--white);
-  border-radius: 10px;
+  background: var(--white);
+  border: 1px solid var(--border-in-light);
+  border-radius: 14px;
   margin-bottom: 10px;
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   transition: background-color 0.3s ease;
   cursor: pointer;
   user-select: none;
-  border: 2px solid transparent;
+  border-width: 1px;
   position: relative;
   content-visibility: auto;
 }
 
 .chat-item:hover {
-  background-color: var(--hover-color);
+  background-color: var(--second);
 }
 
 .chat-item-selected {
-  border-color: var(--primary);
+  border-color: rgba(var(--primary-rgb), 0.45);
+  background: var(--second);
 }
 
 .chat-item-title {
@@ -298,7 +307,7 @@
 .chat-item-info {
   display: flex;
   justify-content: space-between;
-  color: rgb(166, 166, 166);
+  color: rgb(144, 144, 144);
   font-size: 12px;
   margin-top: 8px;
   animation: slide-in ease 0.3s;
@@ -336,24 +345,28 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--black);
-  opacity: 0.45;
+  opacity: 0.58;
   padding: 0 4px;
-  margin-bottom: 6px;
-  margin-top: 4px;
+  margin-bottom: 8px;
+  margin-top: 10px;
   user-select: none;
 }
 
 /* ── Project (folder) section ── */
 .project-section {
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--white);
 }
 
 .project-header {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 6px;
-  border-radius: 8px;
+  padding: 8px 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: background-color 0.15s ease;
   position: relative;
@@ -389,7 +402,7 @@
 .project-name {
   flex: 1;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--black);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -415,9 +428,22 @@
 .project-count {
   font-size: 11px;
   color: var(--black);
-  opacity: 0.4;
+  opacity: 0.55;
   flex-shrink: 0;
   margin-right: 2px;
+}
+
+.project-prompt-preview {
+  margin: 0 4px 4px 22px;
+  padding: 0 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--black);
+  opacity: 0.62;
+  border-left: 2px solid rgba(var(--primary-rgb), 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .project-actions {
@@ -442,6 +468,17 @@
   &:hover {
     background-color: var(--second);
     opacity: 1;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+    display: block;
+  }
+
+  svg path {
+    stroke: var(--black) !important;
+    fill: var(--black) !important;
   }
 }
 
@@ -510,20 +547,20 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  background: none;
+  background: var(--white);
   border: 1px dashed var(--border-in-light);
-  border-radius: 8px;
-  padding: 6px 10px;
+  border-radius: 14px;
+  padding: 10px 12px;
   font-size: 12px;
   color: var(--black);
-  opacity: 0.55;
+  opacity: 0.72;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 4px;
 
   &:hover {
     opacity: 1;
-    background-color: var(--hover-color);
+    background-color: var(--second);
     border-style: solid;
     border-color: var(--primary);
     color: var(--primary);

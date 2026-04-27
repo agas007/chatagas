@@ -971,6 +971,7 @@ function ChatContent() {
 
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
+  const folders = useChatStore((state) => state.folders);
   const allModels = useAllModels();
   const models = useMemo(() => {
     const filteredModels = allModels.filter((m) => m.available);
@@ -985,6 +986,19 @@ function ChatContent() {
       return filteredModels;
     }
   }, [allModels]);
+  const selectedModel = useMemo(
+    () =>
+      models.find(
+        (m) =>
+          m.name === session.mask.modelConfig.model &&
+          m.provider?.providerName === session.mask.modelConfig.providerName,
+      ),
+    [
+      models,
+      session.mask.modelConfig.model,
+      session.mask.modelConfig.providerName,
+    ],
+  );
 
   const config = useAppConfig();
   const fontSize = config.fontSize;
@@ -1064,6 +1078,11 @@ function ChatContent() {
     if (hour < 20) return "Good evening";
     return "Good night";
   }, []);
+
+  const currentFolder = useMemo(
+    () => folders.find((folder) => folder.id === session.folderId),
+    [folders, session.folderId],
+  );
 
   const showWelcome = session.messages.length === 0;
   const navigate = useNavigate();
@@ -1869,7 +1888,7 @@ function ChatContent() {
     fileInput.click();
   }
 
-  async function uploadToKnowledge() {
+  async function uploadToKnowledge(target: "session" | "project" = "session") {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept =
@@ -1878,7 +1897,11 @@ function ChatContent() {
     fileInput.onchange = async (event: any) => {
       setUploading(true);
       const files = event.target.files;
-      const newKnowledge: any[] = [...(session.knowledge || [])];
+      const baseKnowledge =
+        target === "project" && currentFolder
+          ? [...(currentFolder.knowledge || [])]
+          : [...(session.knowledge || [])];
+      const newKnowledge: any[] = [...baseKnowledge];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -1907,9 +1930,20 @@ function ChatContent() {
         }
       }
 
-      chatStore.updateTargetSession(session, (session) => {
-        session.knowledge = newKnowledge;
-      });
+      if (target === "project" && currentFolder) {
+        chatStore.addFolderKnowledge(
+          currentFolder.id,
+          newKnowledge.map((item) => ({
+            name: item.name,
+            content: item.content,
+            type: item.type,
+          })),
+        );
+      } else {
+        chatStore.updateTargetSession(session, (session) => {
+          session.knowledge = newKnowledge;
+        });
+      }
       setUploading(false);
       setShowKnowledgeBase(true);
     };
@@ -1933,15 +1967,25 @@ function ChatContent() {
 
       if (data.error) throw new Error(data.error);
 
-      chatStore.updateTargetSession(session, (session) => {
-        const newKnowledge = [...(session.knowledge || [])];
-        newKnowledge.push({
-          name: data.title || url,
-          content: data.content,
-          type: "text",
+      if (currentFolder) {
+        chatStore.addFolderKnowledge(currentFolder.id, [
+          {
+            name: data.title || url,
+            content: data.content,
+            type: "text",
+          },
+        ]);
+      } else {
+        chatStore.updateTargetSession(session, (session) => {
+          const newKnowledge = [...(session.knowledge || [])];
+          newKnowledge.push({
+            name: data.title || url,
+            content: data.content,
+            type: "text",
+          });
+          session.knowledge = newKnowledge;
         });
-        session.knowledge = newKnowledge;
-      });
+      }
       showToast("Website scraped inside Knowledge Base!");
     } catch (err: any) {
       showToast("Error scraping website: " + err.message);
@@ -1969,15 +2013,25 @@ function ChatContent() {
 
       if (data.error) throw new Error(data.error);
 
-      chatStore.updateTargetSession(session, (session) => {
-        const newKnowledge = [...(session.knowledge || [])];
-        newKnowledge.push({
-          name: data.title || url,
-          content: data.content,
-          type: "text",
+      if (currentFolder) {
+        chatStore.addFolderKnowledge(currentFolder.id, [
+          {
+            name: data.title || url,
+            content: data.content,
+            type: "text",
+          },
+        ]);
+      } else {
+        chatStore.updateTargetSession(session, (session) => {
+          const newKnowledge = [...(session.knowledge || [])];
+          newKnowledge.push({
+            name: data.title || url,
+            content: data.content,
+            type: "text",
+          });
+          session.knowledge = newKnowledge;
         });
-        session.knowledge = newKnowledge;
-      });
+      }
       showToast("Repository context added to Knowledge Base!");
     } catch (err: any) {
       showToast("Error fetching GitHub: " + err.message);
@@ -2073,17 +2127,75 @@ function ChatContent() {
       <div className={styles.chat} key={session.id}>
         {/* ── Model Tabs Bar ── */}
         <div className={styles["model-tabs-bar"]}>
-          {/* Agent mode badge */}
-          {agentMode && (
-            <div className={styles["agent-badge"]}>
-              ⚡ Agent Mode
-              {agentSteps.length > 0 && (
-                <span className={styles["agent-steps"]}>
-                  {agentSteps.length} steps
-                </span>
-              )}
-            </div>
-          )}
+          <div className={styles["chat-topbar-left"]}>
+            {agentMode && (
+              <div className={styles["agent-badge"]}>
+                ⚡ Agent Mode
+                {agentSteps.length > 0 && (
+                  <span className={styles["agent-steps"]}>
+                    {agentSteps.length} steps
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <div className={styles["chat-topbar-right"]} ref={modelSelectorRef}>
+            <button
+              type="button"
+              className={styles["chat-model-switcher"]}
+              onClick={() => setShowModelSelector((v) => !v)}
+            >
+              <span className={styles["chat-model-switcher-label"]}>Model</span>
+              <span className={styles["chat-model-switcher-name"]}>
+                {selectedModel?.displayName ?? session.mask.modelConfig.model}
+              </span>
+              <span className={styles["chat-model-switcher-provider"]}>
+                {session.mask.modelConfig.providerName ?? "OpenAI"}
+              </span>
+              <svg viewBox="0 0 10 6" fill="none">
+                <path
+                  d="M1 1L5 5L9 1"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            {showModelSelector && (
+              <div className={styles["model-selector-menu"]}>
+                {models.map((m) => {
+                  const isSelected =
+                    session.mask.modelConfig.model === m.name &&
+                    session.mask.modelConfig.providerName ===
+                      m.provider?.providerName;
+                  return (
+                    <div
+                      key={`${m.name}@${m.provider?.providerName}`}
+                      className={clsx(styles["model-selector-item"], {
+                        [styles["active"]]: isSelected,
+                      })}
+                      onClick={() => {
+                        chatStore.updateTargetSession(session, (s) => {
+                          s.mask.modelConfig.model = m.name as ModelType;
+                          s.mask.modelConfig.providerName = m.provider
+                            ?.providerName as ServiceProvider;
+                        });
+                        setShowModelSelector(false);
+                      }}
+                    >
+                      <div className={styles["model-selector-item-title"]}>
+                        {m.displayName || m.name}
+                      </div>
+                      <div className={styles["model-selector-item-subtitle"]}>
+                        {m.provider?.providerName}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
         <div className="window-header" data-tauri-drag-region>
           <div className="window-actions">
@@ -2111,18 +2223,32 @@ function ChatContent() {
           <div
             className={clsx("window-header-title", styles["chat-body-title"])}
           >
-            <div
-              className={clsx(
-                "window-header-main-title",
-                styles["chat-body-main-title"],
-              )}
-              onClickCapture={() => setIsEditingMessage(true)}
-            >
-              {!session.topic ? DEFAULT_TOPIC : session.topic}
+            <div className={styles["chat-header-copy"]}>
+              <div className={styles["chat-header-eyebrow"]}>
+                Claude-style workspace
+              </div>
+              <div
+                className={clsx(
+                  "window-header-main-title",
+                  styles["chat-body-main-title"],
+                )}
+                onClickCapture={() => setIsEditingMessage(true)}
+              >
+                {!session.topic ? DEFAULT_TOPIC : session.topic}
+              </div>
+              <div className="window-header-sub-title">
+                {Locale.Chat.SubTitle(session.messages.length)}
+              </div>
             </div>
-            <div className="window-header-sub-title">
-              {Locale.Chat.SubTitle(session.messages.length)}
-            </div>
+            {currentFolder ? (
+              <button
+                className={styles["chat-project-label"]}
+                onClick={() => setShowKnowledgeBase(true)}
+                title="Open project settings"
+              >
+                Project: {currentFolder.name}
+              </button>
+            ) : null}
           </div>
 
           {session.mask.plugin && session.mask.plugin.length > 0 && (
@@ -2217,19 +2343,78 @@ function ChatContent() {
             >
               {showWelcome ? (
                 <div className={styles["welcome-container"]}>
-                  <div className={styles["welcome-logo"]}>
-                    <svg viewBox="0 0 24 24">
-                      <path d="M12 1.5l1.35 4.15h4.35l-3.52 2.56 1.35 4.15L12 9.8l-3.53 2.56 1.35-4.15-3.52-2.56h4.35L12 1.5z" />
-                      <path d="M12 22.5l-1.35-4.15h-4.35l3.52-2.56-1.35-4.15L12 14.2l3.53-2.56-1.35 4.15 3.52 2.56h-4.35L12 22.5z" />
-                      <path d="M1.5 12l4.15-1.35v-4.35l2.56 3.52 4.15-1.35L9.8 12l2.56 3.53-4.15-1.35-2.56 3.52v-4.35L1.5 12z" />
-                      <path d="M22.5 12l-4.15 1.35v4.35l-2.56-3.52-4.15 1.35L14.2 12l-2.56-3.53 4.15 1.35 2.56-3.52v4.35l4.15-12z" />
-                    </svg>
+                  <div className={styles["welcome-eyebrow"]}>
+                    ChatAgas workspace
                   </div>
                   <div className={styles["welcome-greeting"]}>
                     {greeting}, {userName}
                   </div>
+                  <div className={styles["welcome-subtitle"]}>
+                    Pick a model, keep project context, and chat in a calmer
+                    Claude-style workspace.
+                  </div>
 
                   <div className={styles["chat-welcome-input-wrapper"]}>
+                    <div className={styles["welcome-card-grid"]}>
+                      <button
+                        type="button"
+                        className={styles["welcome-card"]}
+                        onClick={() =>
+                          setUserInput("Summarize this project and its goals.")
+                        }
+                      >
+                        <span className={styles["welcome-card-kicker"]}>
+                          Project
+                        </span>
+                        <span className={styles["welcome-card-title"]}>
+                          Summarize the workspace
+                        </span>
+                        <span className={styles["welcome-card-copy"]}>
+                          Build a short brief from the active chat and project
+                          knowledge.
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles["welcome-card"]}
+                        onClick={() =>
+                          setUserInput(
+                            "Draft a clear answer, then polish the wording.",
+                          )
+                        }
+                      >
+                        <span className={styles["welcome-card-kicker"]}>
+                          Writing
+                        </span>
+                        <span className={styles["welcome-card-title"]}>
+                          Draft and refine
+                        </span>
+                        <span className={styles["welcome-card-copy"]}>
+                          Ask for a first pass, then iterate on tone and
+                          structure.
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles["welcome-card"]}
+                        onClick={() =>
+                          setUserInput(
+                            "Explain the trade-offs and recommend the next step.",
+                          )
+                        }
+                      >
+                        <span className={styles["welcome-card-kicker"]}>
+                          Reasoning
+                        </span>
+                        <span className={styles["welcome-card-title"]}>
+                          Compare options
+                        </span>
+                        <span className={styles["welcome-card-copy"]}>
+                          Use the selected model to reason through a decision
+                          with context.
+                        </span>
+                      </button>
+                    </div>
                     <div
                       className={clsx(styles["chat-input-panel-inner"], {
                         [styles["chat-input-panel-inner-attach"]]:
@@ -2252,24 +2437,6 @@ function ChatContent() {
                           fontFamily: config.fontFamily,
                         }}
                       />
-                      <div
-                        className={styles["model-pill"]}
-                        onClick={() => setShowModelSelector(true)}
-                      >
-                        <span className={styles["model-pill-name"]}>
-                          {session.mask.modelConfig.model}
-                        </span>
-                        <div className={styles["model-pill-icon"]}>
-                          <svg viewBox="0 0 10 6" fill="none">
-                            <path
-                              d="M1 1L5 5L9 1"
-                              stroke="currentColor"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </div>
-                      </div>
                       <IconButton
                         icon={isRecording ? <LoadingIcon /> : <HeadphoneIcon />}
                         className={clsx(styles["chat-input-record"], {
@@ -2720,6 +2887,13 @@ function ChatContent() {
 
                 {/* ── Memory slider + Agent toggle ── */}
                 <div className={styles["chat-input-toolbar"]}>
+                  <div className={styles["chat-input-toolbar-copy"]}>
+                    {selectedModel?.displayName ??
+                      session.mask.modelConfig.model}
+                    <span className={styles["chat-input-toolbar-provider"]}>
+                      {session.mask.modelConfig.providerName ?? "OpenAI"}
+                    </span>
+                  </div>
                   {/* Memory pill */}
                   <div
                     className={styles["memory-pill"]}
@@ -2795,66 +2969,6 @@ function ChatContent() {
                       fontFamily: config.fontFamily,
                     }}
                   />
-                  <div className={styles["model-pill"]} ref={modelSelectorRef}>
-                    <div
-                      className={styles["model-pill-select-trigger"]}
-                      onClick={() => setShowModelSelector(!showModelSelector)}
-                    />
-                    <span className={styles["model-pill-name"]}>
-                      {session.mask.modelConfig.model}
-                    </span>
-                    <div className={styles["model-pill-icon"]}>
-                      <svg viewBox="0 0 10 6" fill="none">
-                        <path
-                          d="M1 1L5 5L9 1"
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-
-                    {showModelSelector && (
-                      <div className={styles["model-selector-menu"]}>
-                        {models.map((m) => {
-                          const isSelected =
-                            session.mask.modelConfig.model === m.name &&
-                            session.mask.modelConfig.providerName ===
-                              m.provider?.providerName;
-                          return (
-                            <div
-                              key={`${m.name}@${m.provider?.providerName}`}
-                              className={clsx(styles["model-selector-item"], {
-                                [styles["active"]]: isSelected,
-                              })}
-                              onClick={() => {
-                                chatStore.updateTargetSession(session, (s) => {
-                                  s.mask.modelConfig.model =
-                                    m.name as ModelType;
-                                  s.mask.modelConfig.providerName = m.provider
-                                    ?.providerName as ServiceProvider;
-                                });
-                                setShowModelSelector(false);
-                              }}
-                            >
-                              <div
-                                className={styles["model-selector-item-title"]}
-                              >
-                                {m.displayName || m.name}
-                              </div>
-                              <div
-                                className={
-                                  styles["model-selector-item-subtitle"]
-                                }
-                              >
-                                {m.provider?.providerName}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
                   <IconButton
                     icon={isRecording ? <LoadingIcon /> : <HeadphoneIcon />}
                     className={clsx(styles["chat-input-record"], {
@@ -2886,13 +3000,19 @@ function ChatContent() {
           <div className={styles["knowledge-panel"]}>
             <div className={styles["knowledge-header"]}>
               <div className={styles["knowledge-title"]}>
-                Knowledge Base (RAG)
+                {currentFolder
+                  ? `Project Knowledge · ${currentFolder.name}`
+                  : "Knowledge Base (RAG)"}
               </div>
               <div className={styles["knowledge-actions"]}>
                 <IconButton
                   icon={<AddIcon />}
-                  onClick={uploadToKnowledge}
-                  title="Add File"
+                  onClick={() =>
+                    uploadToKnowledge(currentFolder ? "project" : "session")
+                  }
+                  title={
+                    currentFolder ? "Add file to project" : "Add file to chat"
+                  }
                 />
                 <IconButton
                   icon={<CloseIcon />}
@@ -2901,56 +3021,169 @@ function ChatContent() {
               </div>
             </div>
             <div className={styles["knowledge-body"]}>
-              <div className={styles["knowledge-section-title"]}>
-                Connect Integrations
-              </div>
-              <div className={styles["knowledge-integrations"]}>
-                <div
-                  className={styles["integration-button"]}
-                  onClick={uploadToKnowledge}
-                >
-                  <div className={styles["integration-icon"]}>📁</div>
-                  <div>Upload Files</div>
-                </div>
-                <div
-                  className={styles["integration-button"]}
-                  onClick={scrapeGithub}
-                >
-                  <div className={styles["integration-icon"]}>🐈</div>
-                  <div>Github</div>
-                </div>
-              </div>
-              <div className={styles["knowledge-section-title"]}>
-                Indexed Knowledge
-              </div>
-              <div className={styles["knowledge-list"]}>
-                {session.knowledge?.length === 0 ? (
-                  <div className={styles["knowledge-empty"]}>No files yet</div>
-                ) : (
-                  session.knowledge?.map((item, index) => (
-                    <div key={index} className={styles["knowledge-item"]}>
-                      <div className={styles["knowledge-item-info"]}>
-                        <div className={styles["knowledge-item-name"]}>
-                          {item.name}
-                        </div>
-                        <div className={styles["knowledge-item-size"]}>
-                          {(item.content.length / 1024).toFixed(1)} KB
-                        </div>
-                      </div>
-                      <IconButton
-                        icon={<DeleteIcon />}
-                        onClick={() => {
-                          chatStore.updateTargetSession(session, (session) => {
-                            session.knowledge = session.knowledge?.filter(
-                              (_, i) => i !== index,
-                            );
-                          });
-                        }}
-                      />
+              {currentFolder && (
+                <>
+                  <div className={styles["knowledge-section-title"]}>
+                    Project instructions
+                  </div>
+                  <textarea
+                    className={styles["knowledge-instructions"]}
+                    value={currentFolder.prompt || ""}
+                    onChange={(e) =>
+                      chatStore.updateFolderPrompt(
+                        currentFolder.id,
+                        e.currentTarget.value,
+                      )
+                    }
+                    placeholder="Tell Claude how to behave inside this project"
+                    rows={5}
+                  />
+
+                  <div className={styles["knowledge-section-title"]}>
+                    Project knowledge
+                  </div>
+                  <div className={styles["knowledge-integrations"]}>
+                    <div
+                      className={styles["integration-button"]}
+                      onClick={() => uploadToKnowledge("project")}
+                    >
+                      <div className={styles["integration-icon"]}>📁</div>
+                      <div>Upload Files</div>
                     </div>
-                  ))
-                )}
-              </div>
+                    <div
+                      className={styles["integration-button"]}
+                      onClick={scrapeGithub}
+                    >
+                      <div className={styles["integration-icon"]}>🐈</div>
+                      <div>Github</div>
+                    </div>
+                  </div>
+                  <div className={styles["knowledge-list"]}>
+                    {currentFolder.knowledge?.length === 0 ? (
+                      <div className={styles["knowledge-empty"]}>
+                        No project files yet
+                      </div>
+                    ) : (
+                      currentFolder.knowledge?.map((item) => (
+                        <div key={item.id} className={styles["knowledge-item"]}>
+                          <div className={styles["knowledge-item-info"]}>
+                            <div className={styles["knowledge-item-name"]}>
+                              {item.name}
+                            </div>
+                            <div className={styles["knowledge-item-size"]}>
+                              {(item.content.length / 1024).toFixed(1)} KB
+                            </div>
+                          </div>
+                          <IconButton
+                            icon={<DeleteIcon />}
+                            onClick={() => {
+                              chatStore.removeFolderKnowledge(
+                                currentFolder.id,
+                                item.id,
+                              );
+                            }}
+                          />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+
+              {currentFolder && (session.knowledge?.length ?? 0) > 0 && (
+                <>
+                  <div className={styles["knowledge-section-title"]}>
+                    This chat
+                  </div>
+                  <div className={styles["knowledge-list"]}>
+                    {session.knowledge?.map((item, index) => (
+                      <div key={index} className={styles["knowledge-item"]}>
+                        <div className={styles["knowledge-item-info"]}>
+                          <div className={styles["knowledge-item-name"]}>
+                            {item.name}
+                          </div>
+                          <div className={styles["knowledge-item-size"]}>
+                            {(item.content.length / 1024).toFixed(1)} KB
+                          </div>
+                        </div>
+                        <IconButton
+                          icon={<DeleteIcon />}
+                          onClick={() => {
+                            chatStore.updateTargetSession(
+                              session,
+                              (session) => {
+                                session.knowledge = session.knowledge?.filter(
+                                  (_, i) => i !== index,
+                                );
+                              },
+                            );
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {!currentFolder && (
+                <>
+                  <div className={styles["knowledge-section-title"]}>
+                    Connect Integrations
+                  </div>
+                  <div className={styles["knowledge-integrations"]}>
+                    <div
+                      className={styles["integration-button"]}
+                      onClick={() => uploadToKnowledge("session")}
+                    >
+                      <div className={styles["integration-icon"]}>📁</div>
+                      <div>Upload Files</div>
+                    </div>
+                    <div
+                      className={styles["integration-button"]}
+                      onClick={scrapeGithub}
+                    >
+                      <div className={styles["integration-icon"]}>🐈</div>
+                      <div>Github</div>
+                    </div>
+                  </div>
+                  <div className={styles["knowledge-section-title"]}>
+                    Indexed Knowledge
+                  </div>
+                  <div className={styles["knowledge-list"]}>
+                    {session.knowledge?.length === 0 ? (
+                      <div className={styles["knowledge-empty"]}>
+                        No files yet
+                      </div>
+                    ) : (
+                      session.knowledge?.map((item, index) => (
+                        <div key={index} className={styles["knowledge-item"]}>
+                          <div className={styles["knowledge-item-info"]}>
+                            <div className={styles["knowledge-item-name"]}>
+                              {item.name}
+                            </div>
+                            <div className={styles["knowledge-item-size"]}>
+                              {(item.content.length / 1024).toFixed(1)} KB
+                            </div>
+                          </div>
+                          <IconButton
+                            icon={<DeleteIcon />}
+                            onClick={() => {
+                              chatStore.updateTargetSession(
+                                session,
+                                (session) => {
+                                  session.knowledge = session.knowledge?.filter(
+                                    (_, i) => i !== index,
+                                  );
+                                },
+                              );
+                            }}
+                          />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </Draggable>

@@ -102,7 +102,19 @@ export interface ChatFolder {
   id: string;
   name: string;
   createdAt: number;
+  updatedAt: number;
   pinned?: boolean;
+  prompt?: string;
+  knowledge?: ProjectKnowledgeItem[];
+}
+
+export interface ProjectKnowledgeItem {
+  id: string;
+  name: string;
+  content: string;
+  type: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
@@ -167,6 +179,54 @@ function countMessages(msgs: ChatMessage[]) {
     (pre, cur) => pre + estimateTokenLength(getMessageTextContent(cur, true)),
     0,
   );
+}
+
+function getKnowledgeQuery(session: ChatSession) {
+  const lastUserMessage = [...session.messages]
+    .reverse()
+    .find((msg) => msg.role === "user");
+  const text = lastUserMessage
+    ? getMessageTextContent(lastUserMessage, true)
+    : "";
+  return text || session.topic || "";
+}
+
+function selectRelevantKnowledge(
+  knowledge: { name: string; content: string; type: string }[],
+  query: string,
+  limit: number = 4,
+) {
+  if (knowledge.length <= limit) {
+    return knowledge;
+  }
+
+  const terms = Array.from(
+    new Set(
+      (query.toLowerCase().match(/[a-z0-9_]+/g) || []).filter(
+        (t) => t.length > 2,
+      ),
+    ),
+  ).slice(0, 12);
+
+  const scored = knowledge
+    .map((item, index) => {
+      const haystack = `${item.name}\n${item.content}`.toLowerCase();
+      let score = 0;
+      terms.forEach((term) => {
+        if (haystack.includes(term)) score += 3;
+      });
+      score += Math.min(item.content.length / 2000, 1);
+      return { item, score, index };
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  const best = scored
+    .filter((entry) => entry.score > 0)
+    .slice(0, limit)
+    .map((entry) => entry.item);
+
+  if (best.length > 0) return best;
+  return knowledge.slice(0, limit);
 }
 
 function fillTemplateWith(input: string, modelConfig: ModelConfig) {
@@ -326,6 +386,9 @@ export const useChatStore = createPersistStore(
               id: nanoid(),
               name: folderName,
               createdAt: Date.now(),
+              updatedAt: Date.now(),
+              prompt: "",
+              knowledge: [],
             },
             ...state.folders,
           ],
@@ -337,7 +400,67 @@ export const useChatStore = createPersistStore(
         if (!folderName) return;
         set((state) => ({
           folders: state.folders.map((folder) =>
-            folder.id === folderId ? { ...folder, name: folderName } : folder,
+            folder.id === folderId
+              ? { ...folder, name: folderName, updatedAt: Date.now() }
+              : folder,
+          ),
+        }));
+      },
+
+      updateFolderPrompt(folderId: string, prompt: string) {
+        set((state) => ({
+          folders: state.folders.map((folder) =>
+            folder.id === folderId
+              ? {
+                  ...folder,
+                  prompt,
+                  updatedAt: Date.now(),
+                }
+              : folder,
+          ),
+        }));
+      },
+
+      addFolderKnowledge(
+        folderId: string,
+        knowledge: Omit<
+          ProjectKnowledgeItem,
+          "id" | "createdAt" | "updatedAt"
+        >[],
+      ) {
+        set((state) => ({
+          folders: state.folders.map((folder) =>
+            folder.id === folderId
+              ? {
+                  ...folder,
+                  knowledge: [
+                    ...(folder.knowledge || []),
+                    ...knowledge.map((item) => ({
+                      ...item,
+                      id: nanoid(),
+                      createdAt: Date.now(),
+                      updatedAt: Date.now(),
+                    })),
+                  ],
+                  updatedAt: Date.now(),
+                }
+              : folder,
+          ),
+        }));
+      },
+
+      removeFolderKnowledge(folderId: string, knowledgeId: string) {
+        set((state) => ({
+          folders: state.folders.map((folder) =>
+            folder.id === folderId
+              ? {
+                  ...folder,
+                  knowledge: (folder.knowledge || []).filter(
+                    (item) => item.id !== knowledgeId,
+                  ),
+                  updatedAt: Date.now(),
+                }
+              : folder,
           ),
         }));
       },
@@ -369,7 +492,7 @@ export const useChatStore = createPersistStore(
         set((state) => ({
           folders: state.folders.map((folder) =>
             folder.id === folderId
-              ? { ...folder, pinned: !folder.pinned }
+              ? { ...folder, pinned: !folder.pinned, updatedAt: Date.now() }
               : folder,
           ),
         }));
@@ -595,16 +718,41 @@ export const useChatStore = createPersistStore(
           knowledgePrefix = `\n\n[KNOWLEDGE BASE]\n${sessionKnowledge.map((k) => `File: ${k.name}\nContext: ${k.content}`).join("\n---\n")}\n[END OF KNOWLEDGE BASE]\n\n`;
         }
 
+        const projectKnowledge =
+          get()
+            .getCurrentFolder()
+            ?.knowledge?.filter((item) => item.content.trim().length > 0) || [];
+        const relevantProjectKnowledge = selectRelevantKnowledge(
+          projectKnowledge,
+          getKnowledgeQuery(session),
+        );
+        let projectKnowledgePrefix = "";
+        if (relevantProjectKnowledge.length > 0) {
+          projectKnowledgePrefix = `\n\n[PROJECT KNOWLEDGE]\n${relevantProjectKnowledge
+            .map((k) => {
+              const clipped =
+                k.content.length > 6000
+                  ? `${k.content.slice(0, 6000)}…`
+                  : k.content;
+              return `File: ${k.name}\nContext: ${clipped}`;
+            })
+            .join("\n---\n")}\n[END OF PROJECT KNOWLEDGE]\n\n`;
+        }
+
         const sendMessages = recentMessages
           .concat(userMessage)
           .map((m) => ({ ...m }));
 
         // Inject knowledge base content ONLY to the messages being sent to API
         // to avoid bloating the history stored in session.messages
-        if (knowledgePrefix && sendMessages.length > 0) {
+        if (
+          (knowledgePrefix || projectKnowledgePrefix) &&
+          sendMessages.length > 0
+        ) {
           const lastMessage = sendMessages[sendMessages.length - 1];
           if (typeof lastMessage.content === "string") {
-            lastMessage.content = knowledgePrefix + lastMessage.content;
+            lastMessage.content =
+              projectKnowledgePrefix + knowledgePrefix + lastMessage.content;
           } else {
             // Deep clone content if it's an array for multimodal
             const contentArray = Array.from(lastMessage.content as any[]).map(
@@ -612,9 +760,13 @@ export const useChatStore = createPersistStore(
             ) as any[];
             const textPart = contentArray.find((p) => p.type === "text");
             if (textPart) {
-              textPart.text = knowledgePrefix + textPart.text;
+              textPart.text =
+                projectKnowledgePrefix + knowledgePrefix + textPart.text;
             } else {
-              contentArray.unshift({ type: "text", text: knowledgePrefix });
+              contentArray.unshift({
+                type: "text",
+                text: projectKnowledgePrefix + knowledgePrefix,
+              });
             }
             lastMessage.content = contentArray as any;
           }
@@ -749,6 +901,24 @@ export const useChatStore = createPersistStore(
         }
       },
 
+      getCurrentFolder() {
+        const session = get().currentSession();
+        if (!session?.folderId) return;
+        return get().folders.find((folder) => folder.id === session.folderId);
+      },
+
+      getProjectPrompt() {
+        const folder = get().getCurrentFolder();
+        const prompt = folder?.prompt?.trim();
+        if (prompt) {
+          return createMessage({
+            role: "system",
+            content: prompt,
+            date: "",
+          });
+        }
+      },
+
       async getMessagesWithMemory() {
         const session = get().currentSession();
         const modelConfig = session.mask.modelConfig;
@@ -765,6 +935,7 @@ export const useChatStore = createPersistStore(
           (session.mask.modelConfig.model.startsWith("gpt-") ||
             session.mask.modelConfig.model.startsWith("chatgpt-"));
 
+        const projectPrompt = get().getProjectPrompt();
         const mcpEnabled = await isMcpEnabled();
         const mcpSystemPrompt = mcpEnabled ? await getMcpSystemPrompt() : "";
 
@@ -789,6 +960,8 @@ export const useChatStore = createPersistStore(
             }),
           ];
         }
+
+        const projectPrompts = projectPrompt ? [projectPrompt] : [];
 
         if (shouldInjectSystemPrompts || mcpEnabled) {
           console.log(
@@ -815,10 +988,11 @@ export const useChatStore = createPersistStore(
 
         // lets concat send messages, including 4 parts:
         // 0. system prompt: to get close to OpenAI Web ChatGPT
-        // 1. long term memory: summarized memory messages
-        // 2. pre-defined in-context prompts
-        // 3. short term memory: latest n messages
-        // 4. newest input message
+        // 1. project prompt: folder-level instruction shared by all chats
+        // 2. long term memory: summarized memory messages
+        // 3. pre-defined in-context prompts
+        // 4. short term memory: latest n messages
+        // 5. newest input message
         const memoryStartIndex = shouldSendLongTermMemory
           ? Math.min(longTermMemoryStartIndex, shortTermMemoryStartIndex)
           : shortTermMemoryStartIndex;
@@ -846,6 +1020,7 @@ export const useChatStore = createPersistStore(
         // concat all messages
         const recentMessages = [
           ...systemPrompts,
+          ...projectPrompts,
           ...longTermMemoryPrompts,
           ...contextPrompts,
           ...reversedRecentMessages.reverse(),
@@ -1075,7 +1250,7 @@ export const useChatStore = createPersistStore(
   },
   {
     name: StoreKey.Chat,
-    version: 3.5,
+    version: 3.7,
     migrate(persistedState, version) {
       const state = persistedState as any;
       const newState = JSON.parse(
@@ -1156,6 +1331,31 @@ export const useChatStore = createPersistStore(
           (folder: ChatFolder) => ({
             ...folder,
             pinned: folder.pinned ?? false,
+          }),
+        );
+      }
+
+      if (version < 3.6) {
+        (newState as any).folders = ((newState as any).folders || []).map(
+          (folder: ChatFolder) => ({
+            ...folder,
+            updatedAt: folder.updatedAt ?? folder.createdAt ?? Date.now(),
+            prompt: folder.prompt ?? "",
+            knowledge: folder.knowledge ?? [],
+          }),
+        );
+      }
+
+      if (version < 3.7) {
+        (newState as any).folders = ((newState as any).folders || []).map(
+          (folder: ChatFolder) => ({
+            ...folder,
+            knowledge: (folder.knowledge || []).map((item) => ({
+              ...item,
+              id: item.id ?? nanoid(),
+              createdAt: item.createdAt ?? folder.createdAt ?? Date.now(),
+              updatedAt: item.updatedAt ?? folder.updatedAt ?? Date.now(),
+            })),
           }),
         );
       }

@@ -1,5 +1,24 @@
 if ('serviceWorker' in navigator) {
   window.addEventListener('DOMContentLoaded', function () {
+    const isLocalDev =
+      location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+    if (isLocalDev) {
+      window._SW_ENABLED = false;
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        Promise.all(registrations.map((registration) => registration.unregister()))
+          .then(() => caches.keys())
+          .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+          .then(() => {
+            console.log('ServiceWorker disabled in local development.');
+          })
+          .catch(function (err) {
+            console.error('ServiceWorker cleanup failed:', err);
+          });
+      });
+      return;
+    }
+
     navigator.serviceWorker.register('/serviceWorker.js').then(function (registration) {
       console.log('ServiceWorker registration successful with scope: ', registration.scope);
       const sw = registration.installing || registration.waiting
