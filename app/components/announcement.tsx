@@ -1,184 +1,45 @@
-import React from "react";
 import { Markdown } from "./markdown";
-import { useAppConfig } from "../store/config";
 import { IconButton } from "./button";
 import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 
-const RELEASE_NOTES = `
-# Chatagas Release v2.1.0 ⚡
-*Rilis: 15 April 2026 (WIB)*
-
-Versi ini membawa lompatan besar dalam produktivitas dengan fitur Agentic AI, kendali memori, dan navigasi model yang lebih efisien!
-
-### ⚡ Agentic AI (Power mode)
-- **Built-in Tools**: AI kini bisa melakukan pencarian web, membaca webpage, melakukan kalkulasi matematika kompleks, dan mengecek waktu secara real-time.
-- **Multi-step Reasoning**: Aktifkan fitur **Agent** melalui tombol ⚡ di kotak input untuk memicu loop pemecahan masalah yang lebih cerdas.
-- **Live Steps Tracker**: Pantau langkah-langkah kerja agent secara langsung melalui badge di bagian atas chat.
-
-### 🧠 Real-time Memory Slider
-- **Flexible Context**: Atur seberapa panjang "ingatan" (context window) yang digunakan AI melalui pill "Brain" di bawah kotak input.
-- **Instan Control**: Geser slider dari 1 hingga 32 pesan untuk mendapatkan hasil yang lebih fokus atau lebih luas secara instan.
-
-### 🗂️ Model Tabs Bar (Fast Switch)
-- **Claude-style Tabs**: Navigasi antar model favorit kini lebih cepat melalui barisan tab di bagian atas area chat.
-- **Model Persistence**: Model aktif ditampilkan dengan indikator visual yang jelas, memudahkan Anda berganti konteks tanpa kehilangan jejak.
-
-### 🔄 Intelligent Project Sync
-- **Folder Consistency**: Perbaikan sistem sinkronisasi folder (projects) untuk memastikan struktur folder Anda tetap sama di semua perangkat.
-- **Sync Stability**: Optimalisasi mesin auto-sync untuk penanganan data yang lebih cepat dan aman saat pindah perangkat.
-
----
-
-# Chatagas Release v2.0.0 🎨
-*Rilis: 13 April 2026 (WIB)*
-
-Selamat datang di **Chatagas v2.0.0**! Versi ini adalah tonggak sejarah baru dengan perombakan total antarmuka (UI/UX) yang terinspirasi dari **Claude AI**.
-
-### 🎨 Claude-Inspired Minimalist UI
-- **Clean Aesthetic**: Penghapusan gelembung chat tradisional untuk aliran pesan yang lebih bersih dan fokus pada teks.
-- **Warm & Minimalist Colors**: Palet warna baru yang lebih ramah di mata (Warm Off-White untuk mode terang, Charcoal untuk mode gelap).
-- **Narrow Focus Width**: Lebar chat kini dibatasi (max 720px) agar mata tidak lelah saat membaca barisan teks yang panjang.
-
-### 🖋️ Premium Typography
-- **Serif Font Experience**: Penggunaan font Serif pilihan secara global untuk memberikan kesan seperti membaca buku premium.
-- **Enhanced Readability**: Optimalisasi ukuran font (\`16px\`) dan jarak antar baris (\`line-height: 1.75\`) untuk kenyamanan maksimal.
-
-### 🕹️ User Interface Refinements
-- **Floating Input Panel**: Kotak input kini tampil melayang dengan efek bayangan halus, memberikan kesan modern dan futuristik.
-- **Model Selection Pill**: Pemilihan model kini lebih intuitif melalui tombol "Pill" di pojok kanan bawah kotak input.
-- **Icon-Only Controls**: Pembersihan antarmuka dari teks-teks yang tidak perlu (seperti tombol "Send"), digantikan dengan kontrol berbasis ikon yang elegan.
-
----
-
-# Chatagas Release v1.4.2 📈
-*Rilis: 1 April 2026 (WIB)*
-
-Versi ini membawa peningkatan pada fitur persona (Mask) untuk membantu performa trading Anda!
-
-### 📈 Pakar Trading & Analis Pasar (Persona Baru)
-- **Technical Analysis**: Menguasai puluhan indikator teknikal (RSI, MACD, EMA) untuk sinyal Entry & Exit.
-- **Trade Audit**: Bantu audit riwayat hasil trading Anda untuk merangkum pelajaran (lessons learned) dan perbaikan strategi.
-- **Precision Mode**: Konfigurasi GPT-4o untuk hasil analisa angka yang akurat dan tajam.
-
----
-
-# Chatagas Release v1.4.1 📎
-*Rilis: 1 April 2026 (WIB)*
-
-Versi ini memfokuskan pada kenyamanan antarmuka saat Anda berinteraksi dengan banyak berkas!
-
-### 📎 Compact File Attachment UI
-- **File Cards**: Lampiran PDF, Excel, dan Teks kini tampil dalam bentuk kartu ikon yang ringkas.
-- **Anti-Clutter**: Isi teks file yang panjang tidak akan lagi memenuhi (banjir) gelembung chat, namun AI tetap dapat membacanya secara penuh di latar belakang.
-- **Premium Design**: Nikmati desain kartu lampiran yang elegan dengan efek hover yang halus dan responsif.
-
----
-
-# Chatagas Release v1.4.0 🔐
-*Rilis: 1 April 2026 (WIB)*
-
-Versi ini membawa perubahan fundamental pada sistem keamanan dan penyimpanan data Anda dengan integrasi **Cloud Synchronization**!
-
-### 👤 Cloud Authentication System
-Sekarang Anda bisa mendaftar dan masuk menggunakan email & password. Chatagas bukan lagi sekadar chat lokal; riwayat chat Anda kini aman tersimpan di database khusus untuk akun Anda.
-
-### 🔄 Multi-Device Cloud Sync
-Riwayat chat, profil, dan pengaturan Anda akan disinkronkan secara otomatis ke database online (Neon Postgres). Kirim chat dari laptop, lanjut baca dari gadget lain tanpa kehilangan data!
-
-### 💎 Desain Login Premium
-Halaman masuk baru dengan sentuhan *Glassmorphism* dan gradien warna futuristik, memberikan kesan profesional dan modern sejak pertama kali Anda masuk.
-
-### 📊 Account Status di Sidebar
-Pantau akun dan status sinkronisasi cloud Anda secara real-time langsung dari panel navigasi utama.
-
----
-
-# Chatagas Release v1.3.0 📡
-*Rilis: 31 Maret 2026 (WIB)*
-
-Selamat datang di v1.3.0! Versi ini membawa perbaikan stabilitas besar pada sistem pemrosesan dokumen dan penambahan masker spesialis baru.
-
-### 🏛️ Pakar Tata Kelola & Birokrasi
-- Masker baru untuk membantu Anda menavigasi aturan pemerintahan yang kompleks.
-- Strategi interaksi pejabat dan pencarian opsi **win-win solution** yang taktis.
-
-### 📁 Enhanced File Context Support
-- **Universal Upload Button**: Tombol upload berkas kini muncul di semua model (tidak hanya vision).
-- **Direct Txt & Markdown**: Dukungan penuh untuk upload file teks (\`.txt\`) dan Markdown (\`.md\`) langsung sebagai konteks obrolan.
-- **Peningkatan Kapasitas**: Unggah hingga 5 berkas sekaligus untuk konteks yang lebih kaya.
-
-### 🛠️ Perbaikan & Bug Fixes (Stability)
-- **Fix PDF Extraction**: Perbaikan total error *TypeError* saat memproses PDF dengan sistem *isolated utility* dan *local worker*.
-- **Sync Locale**: Pembersihan total sisa-sisa bahasa yang tidak didukung untuk mempercepat waktu build.
-- Penyesuaian ikon tombol unggah berkas agar lebih intuitif.
-
----
-
-# Chatagas Release v1.2.0 🎙️
-*Rilis: 31 Maret 2026 (WIB)*
-
-Selamat datang di v1.2.0! Fokus kali ini adalah lokalisasi Indonesia penuh dan fitur **Speech-to-Text Gratis**.
-
-### 🇲🇨 Lokalisasi Indonesia Penuh
-- Semua tampilan kini mendukung Bahasa Indonesia.
-- Penghapusan total bahasa Mandarin/Taiwan untuk pengalaman yang lebih clean.
-
-### 🎙️ Free Browser STT (Voice to Text)
-- Gunakan fitur **Speech Recognition** langsung dari browser.
-- **Gratis Selamanya**: Tidak membutuhkan credit OpenAI/OpenRouter.
-- Proses transkripsi real-time dan langsung masuk ke kotak chat.
-
-### ⚖️ Mask Spesialis Baru (Indonesia)
-- **Pakar Pajak & Hukum**: Asisten khusus untuk regulasi pajak (UU HPP, PPh, PPN) dan hukum di Indonesia.
-- **Penerjemah Profesional**: Ahli terjemahan nuansa lokal.
-- **Penulis Konten**: Bantu bikin konten viral khas Indonesia.
-
-### 🛠️ Perbaikan & Bug Fixes
-- Perbaikan crash server proxy saat menangani data multipart/audio.
-- Penyesuaian tata letak (layout) tombol rekam suara di panel input.
-
----
-
-# Chatagas Release v1.1.0 🚀
-*Rilis: 30 Maret 2026 (WIB)*
-
-Versi v1.1.0 resmi dirilis! Versi ini membawa fitur **RAG (Retrieval Augmented Generation)** dan dukungan media yang sangat powerful.
-
-### 📄 Chat with PDF & XLSX
-Sekarang Anda bisa melakukan upload file PDF dan Excel langsung. Chatagas akan mengekstrak teksnya dan menggunakannya sebagai konteks obrolan.
-
-### 📚 Knowledge Base (RAG)
-Kelola dokumen-dokumen penting Anda lewat panel **Knowledge**. AI akan menjawab pertanyaan Anda berdasarkan dokumen yang Anda upload secara cerdas.
-
-### 💬 Text Selection Reply (Smart Quote)
-Cukup sorot (highlight) teks di dalam chat, dan tombol **Reply** akan muncul secara otomatis untuk mengutip bagian tersebut dengan cepat.
-
-### 🎥 Video Analysis Support
-Support analisis file video untuk model yang mendukung multimodal (seperti Gemini).
-
-### 🛠️ Perbaikan & Bug Fixes
-- Dukungan penuh untuk \`pdfjs-dist v5.x\` di Next.js & React 19.
-- Perbaikan layout sidebar dan pratinjau lampiran file.
-
----
-
-# Chatagas Release v1.0.0 🚀
-*Rilis: 29 Maret 2026 (WIB)*
-
-### ⚡️ Parallel Multi-Model Chat
-Bandingkan jawaban dari beberapa model AI sekaligus secara instan!
-
-### 🔀 Fork Chat (Branching)
-Gunakan fitur **Fork** untuk mencabang obrolan dari titik pesan mana pun.
-
-### 🏷️ Sistem Versi Dinamis
-Sidebar kini menampilkan versi aplikasi secara dinamis yang tersinkronisasi langsung dengan sistem.
-`;
+const RELEASE_NOTES = [
+  "# Chatagas Release v2.1.1 ⚡",
+  "*Rilis: 27 April 2026 (WIB)*",
+  "",
+  "Rilis ini fokus ke tampilan yang lebih rapi, model picker yang lebih jelas, dan perbaikan auth di localhost.",
+  "",
+  "### 🎨 Claude-Style Workspace Polish",
+  "- Cleaner header: jarak sidebar dan judul chat dirapikan supaya tampilan lebih lega.",
+  "- Model picker dipindah ke header chat agar lebih mudah dilihat.",
+  "- Welcome screen dibuat lebih fokus dan lebih konsisten.",
+  "",
+  "### 🔐 Auth Fix for Localhost",
+  "- Session fetch sekarang pakai origin browser saat development lokal.",
+  "- Mengurangi error `CLIENT_FETCH_ERROR` yang muncul di `localhost`.",
+  "",
+  "---",
+  "",
+  "# Chatagas Release v2.1.0 ⚡",
+  "*Rilis: 15 April 2026 (WIB)*",
+  "",
+  "Versi ini membawa lompatan besar dalam produktivitas dengan fitur Agentic AI, kendali memori, dan navigasi model yang lebih efisien!",
+  "",
+  "### ⚡ Agentic AI (Power mode)",
+  "- Built-in tools untuk web search, webpage reading, kalkulasi, dan pengecekan waktu.",
+  "- Multi-step reasoning lewat tombol Agent di kotak input.",
+  "- Live steps tracker di bagian atas chat.",
+  "",
+  "### 🧠 Real-time Memory Slider",
+  "- Atur panjang context window dari 1 hingga 32 pesan.",
+  "- Kontrol yang lebih instan untuk hasil yang lebih fokus atau lebih luas.",
+  "",
+  "### 🔄 Intelligent Project Sync",
+  "- Sinkronisasi folder/projects lebih konsisten di semua perangkat.",
+  "- Auto-sync lebih stabil dan aman saat pindah perangkat.",
+].join("\n");
 
 export function AnnouncementModal(props: { onClose: () => void }) {
-  const config = useAppConfig();
-
   return (
     <div className="modal-mask" onClick={props.onClose}>
       <div

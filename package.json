@@ -1,7 +1,7 @@
 {
   "name": "chatagas",
   "private": false,
-  "version": "2.1.0",
+  "version": "2.1.1",
   "license": "mit",
   "scripts": {
     "mask": "npx tsx app/masks/build.ts",
