@@ -2224,9 +2224,6 @@ function ChatContent() {
             className={clsx("window-header-title", styles["chat-body-title"])}
           >
             <div className={styles["chat-header-copy"]}>
-              <div className={styles["chat-header-eyebrow"]}>
-                Claude-style workspace
-              </div>
               <div
                 className={clsx(
                   "window-header-main-title",
@@ -2351,7 +2348,7 @@ function ChatContent() {
                   </div>
                   <div className={styles["welcome-subtitle"]}>
                     Pick a model, keep project context, and chat in a calmer
-                    Claude-style workspace.
+                    workspace.
                   </div>
 
                   <div className={styles["chat-welcome-input-wrapper"]}>
