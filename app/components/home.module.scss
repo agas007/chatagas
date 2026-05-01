@@ -154,6 +154,58 @@
   }
 }
 
+/* Overlay gelap untuk mobile drawer */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Mobile header dengan hamburger */
+.mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--gray);
+  border-bottom: var(--border-in-light);
+  min-height: 44px;
+}
+
+.hamburger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--black);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &:active {
+    background-color: var(--hover-color);
+  }
+
+  svg {
+    display: block;
+  }
+}
+
 .window-content {
   width: var(--window-content-width);
   height: 100%;
@@ -173,21 +225,31 @@
     min-width: unset;
     border: 0;
     border-radius: 0;
+    position: relative;
   }
 
   .sidebar {
-    position: absolute;
+    position: fixed;
     left: -100%;
+    top: 0;
+    bottom: 0;
     z-index: 1000;
     height: var(--full-height);
-    transition: all ease 0.3s;
+    width: 85vw !important;
+    max-width: 320px;
+    transition: left 0.3s ease;
     box-shadow: none;
     padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) 16px;
+    background: var(--gray);
   }
 
   .sidebar-show {
     left: 0;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebar-drag {
+    display: none;
   }
 
   .mobile {

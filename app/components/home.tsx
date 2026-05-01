@@ -174,6 +174,7 @@ function Screen() {
   const isAuth = location.pathname === Path.Auth;
   const isSd = location.pathname === Path.Sd;
   const isSdNew = location.pathname === Path.SdNew;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isMobileScreen = useMobileScreen();
   const shouldTightBorder =
@@ -198,12 +199,39 @@ function Screen() {
       <>
         {config.showSidebar && (
           <SideBar
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
             className={clsx({
-              [styles["sidebar-show"]]: isHome,
+              [styles["sidebar-show"]]: sidebarOpen,
             })}
           />
         )}
         <WindowContent>
+          {/* Tombol hamburger untuk mobile */}
+          {isMobileScreen && (
+            <div className={styles["mobile-header"]}>
+              <button
+                className={styles["hamburger-btn"]}
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Buka menu"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+            </div>
+          )}
           <Routes>
             <Route path={Path.Home} element={<Chat />} />
             <Route path={Path.NewChat} element={<NewChat />} />

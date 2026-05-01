@@ -226,7 +226,11 @@ export function SideBarTail(props: {
   );
 }
 
-export function SideBar(props: { className?: string }) {
+export function SideBar(props: {
+  className?: string;
+  sidebarOpen?: boolean;
+  setSidebarOpen?: (open: boolean) => void;
+}) {
   useHotKey();
   const { onDragStart, shouldNarrow } = useDragSideBar();
   const [showDiscoverySelector, setshowDiscoverySelector] = useState(false);
@@ -235,9 +239,9 @@ export function SideBar(props: { className?: string }) {
   const chatStore = useChatStore();
   const [mcpEnabled, setMcpEnabled] = useState(false);
   const { data: session } = useSession();
+  const { sidebarOpen, setSidebarOpen } = props;
 
   useEffect(() => {
-    // 检查 MCP 是否启用
     const checkMcpStatus = async () => {
       const enabled = await isMcpEnabled();
       setMcpEnabled(enabled);
@@ -246,163 +250,169 @@ export function SideBar(props: { className?: string }) {
     checkMcpStatus();
   }, []);
 
+  // Tutup sidebar saat navigasi di mobile
+  const handleNavigation = (path: string) => {
+    if (setSidebarOpen) setSidebarOpen(false);
+    navigate(path);
+  };
+
   return (
-    <SideBarContainer
-      onDragStart={onDragStart}
-      shouldNarrow={shouldNarrow}
-      {...props}
-    >
-      <SideBarHeader
-        title="Agas Chat AI"
-        subTitle={`Your personal AI assistant. v${VERSION}`}
-        logo={<ChatGptIcon />}
+    <>
+      {/* Overlay gelap untuk mobile */}
+      {sidebarOpen && (
+        <div
+          className={styles["sidebar-overlay"]}
+          onClick={() => setSidebarOpen?.(false)}
+        />
+      )}
+      <SideBarContainer
+        onDragStart={onDragStart}
         shouldNarrow={shouldNarrow}
+        className={clsx(props.className, {
+          [styles["sidebar-show"]]: sidebarOpen,
+        })}
       >
-        <div className={styles["sidebar-header-bar"]}>
-          {session ? (
-            <div className={styles["sidebar-account"]}>
-              <div className={styles["sidebar-account-info"]}>
-                <div className={styles["sidebar-account-name"]}>
-                  {session.user?.email}
+        <SideBarHeader
+          title="Agas Chat AI"
+          subTitle={`Your personal AI assistant. v${VERSION}`}
+          logo={<ChatGptIcon />}
+          shouldNarrow={shouldNarrow}
+        >
+          <div className={styles["sidebar-header-bar"]}>
+            {session ? (
+              <div className={styles["sidebar-account"]}>
+                <div className={styles["sidebar-account-info"]}>
+                  <div className={styles["sidebar-account-name"]}>
+                    {session.user?.email}
+                  </div>
+                  <div className={styles["sidebar-account-status"]}>
+                    Cloud Sync Active
+                  </div>
                 </div>
-                <div className={styles["sidebar-account-status"]}>
-                  Cloud Sync Active
+                <IconButton
+                  icon={<SettingsIcon />}
+                  onClick={() => {
+                    if (confirm("Logout dari ChatAgas?")) {
+                      signOut();
+                    }
+                  }}
+                  shadow
+                />
+              </div>
+            ) : (
+              <div className={styles["sidebar-account-guest"]}>
+                <IconButton
+                  icon={<ChatGptIcon />}
+                  text="Login / Daftar"
+                  type="primary"
+                  onClick={() => {
+                    window.location.href = "/auth/signin";
+                  }}
+                  shadow
+                />
+                <div className={styles["sidebar-account-status-red"]}>
+                  Mode Lokal (Data tidak tersimpan di Cloud)
                 </div>
               </div>
-              <IconButton
-                icon={<SettingsIcon />}
-                onClick={() => {
-                  if (confirm("Logout dari ChatAgas?")) {
-                    signOut();
-                  }
-                }}
-                shadow
-              />
-            </div>
-          ) : (
-            <div className={styles["sidebar-account-guest"]}>
-              <IconButton
-                icon={<ChatGptIcon />}
-                text="Login / Daftar"
-                type="primary"
-                onClick={() => {
-                  window.location.href = "/auth/signin";
-                }}
-                shadow
-              />
-              <div className={styles["sidebar-account-status-red"]}>
-                Mode Lokal (Data tidak tersimpan di Cloud)
-              </div>
-            </div>
-          )}
-          <div style={{ height: "10px" }} />
-          <IconButton
-            icon={<MaskIcon />}
-            text={shouldNarrow ? undefined : Locale.Mask.Name}
-            className={styles["sidebar-bar-button"]}
-            onClick={() => {
-              if (config.dontShowMaskSplashScreen !== true) {
-                navigate(Path.NewChat, { state: { fromHome: true } });
-              } else {
-                navigate(Path.Masks, { state: { fromHome: true } });
-              }
-            }}
-            shadow
-          />
-          {mcpEnabled && (
+            )}
+            <div style={{ height: "10px" }} />
             <IconButton
-              icon={<McpIcon />}
-              text={shouldNarrow ? undefined : Locale.Mcp.Name}
+              icon={<MaskIcon />}
+              text={shouldNarrow ? undefined : Locale.Mask.Name}
               className={styles["sidebar-bar-button"]}
-              onClick={() => {
-                navigate(Path.McpMarket, { state: { fromHome: true } });
-              }}
+              onClick={() =>
+                handleNavigation(
+                  config.dontShowMaskSplashScreen !== true
+                    ? Path.NewChat
+                    : Path.Masks,
+                )
+              }
               shadow
             />
-          )}
-          <IconButton
-            icon={<DiscoveryIcon />}
-            text={shouldNarrow ? undefined : Locale.Discovery.Name}
-            className={styles["sidebar-bar-button"]}
-            onClick={() => setshowDiscoverySelector(true)}
-            shadow
-          />
-        </div>
-        {showDiscoverySelector && (
-          <Selector
-            items={[
-              ...DISCOVERY.map((item) => {
-                return {
-                  title: item.name,
-                  value: item.path,
-                };
-              }),
-            ]}
-            onClose={() => setshowDiscoverySelector(false)}
-            onSelection={(s) => {
-              navigate(s[0], { state: { fromHome: true } });
-            }}
-          />
-        )}
-      </SideBarHeader>
-      <SideBarBody
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            navigate(Path.Home);
-          }
-        }}
-      >
-        <ChatList narrow={shouldNarrow} />
-      </SideBarBody>
-      <SideBarTail
-        primaryAction={
-          <>
-            <div className={clsx(styles["sidebar-action"], styles.mobile)}>
+            {mcpEnabled && (
               <IconButton
-                icon={<DeleteIcon />}
-                onClick={async () => {
-                  if (await showConfirm(Locale.Home.DeleteChat)) {
-                    chatStore.deleteSession(chatStore.currentSessionIndex);
-                  }
-                }}
+                icon={<McpIcon />}
+                text={shouldNarrow ? undefined : Locale.Mcp.Name}
+                className={styles["sidebar-bar-button"]}
+                onClick={() => handleNavigation(Path.McpMarket)}
+                shadow
               />
-            </div>
-            <div className={styles["sidebar-action"]}>
-              <Link to={Path.Settings}>
+            )}
+            <IconButton
+              icon={<DiscoveryIcon />}
+              text={shouldNarrow ? undefined : Locale.Discovery.Name}
+              className={styles["sidebar-bar-button"]}
+              onClick={() => setshowDiscoverySelector(true)}
+              shadow
+            />
+          </div>
+          {showDiscoverySelector && (
+            <Selector
+              items={DISCOVERY.map((item) => ({
+                title: item.name,
+                value: item.path,
+              }))}
+              onClose={() => setshowDiscoverySelector(false)}
+              onSelection={(s) => handleNavigation(s[0])}
+            />
+          )}
+        </SideBarHeader>
+        <SideBarBody
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleNavigation(Path.Home);
+            }
+          }}
+        >
+          <ChatList narrow={shouldNarrow} />
+        </SideBarBody>
+        <SideBarTail
+          primaryAction={
+            <>
+              <div className={clsx(styles["sidebar-action"], styles.mobile)}>
                 <IconButton
-                  ariaLabel={Locale.Settings.Title}
-                  icon={<SettingsIcon />}
-                  shadow
+                  icon={<DeleteIcon />}
+                  onClick={async () => {
+                    if (await showConfirm(Locale.Home.DeleteChat)) {
+                      chatStore.deleteSession(chatStore.currentSessionIndex);
+                    }
+                  }}
                 />
-              </Link>
-            </div>
-            <div className={styles["sidebar-action"]}>
-              <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-                <IconButton
-                  ariaLabel={Locale.Export.MessageFromChatGPT}
-                  icon={<GithubIcon />}
-                  shadow
-                />
-              </a>
-            </div>
-          </>
-        }
-        secondaryAction={
-          <IconButton
-            icon={<AddIcon />}
-            text={shouldNarrow ? undefined : Locale.Home.NewChat}
-            onClick={() => {
-              if (config.dontShowMaskSplashScreen) {
-                chatStore.newSession();
-                navigate(Path.Chat);
-              } else {
-                navigate(Path.NewChat);
+              </div>
+              <div className={styles["sidebar-action"]}>
+                <Link to={Path.Settings}>
+                  <IconButton
+                    ariaLabel={Locale.Settings.Title}
+                    icon={<SettingsIcon />}
+                    shadow
+                  />
+                </Link>
+              </div>
+              <div className={styles["sidebar-action"]}>
+                <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+                  <IconButton
+                    ariaLabel={Locale.Export.MessageFromChatGPT}
+                    icon={<GithubIcon />}
+                    shadow
+                  />
+                </a>
+              </div>
+            </>
+          }
+          secondaryAction={
+            <IconButton
+              icon={<AddIcon />}
+              text={shouldNarrow ? undefined : Locale.Home.NewChat}
+              onClick={() =>
+                handleNavigation(
+                  config.dontShowMaskSplashScreen ? Path.Chat : Path.NewChat,
+                )
               }
-            }}
-            shadow
-          />
-        }
-      />
-    </SideBarContainer>
+              shadow
+            />
+          }
+        />
+      </SideBarContainer>
+    </>
   );
 }
