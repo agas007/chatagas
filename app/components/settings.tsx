@@ -1705,6 +1705,23 @@ export function Settings() {
           </ListItem>
 
           <ListItem
+            title="Enable Web Search"
+            subTitle="Let the model call web_search automatically during chats"
+          >
+            <input
+              aria-label="Enable Web Search"
+              type="checkbox"
+              checked={config.enableWebSearch !== false}
+              onChange={(e) =>
+                updateConfig(
+                  (config) =>
+                    (config.enableWebSearch = e.currentTarget.checked),
+                )
+              }
+            ></input>
+          </ListItem>
+
+          <ListItem
             title={Locale.Mask.Config.Artifacts.Title}
             subTitle={Locale.Mask.Config.Artifacts.SubTitle}
           >

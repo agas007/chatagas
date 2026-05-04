@@ -2672,22 +2672,31 @@ function ChatContent() {
                             {/*@ts-ignore*/}
                             {message?.tools?.length > 0 && (
                               <div className={styles["chat-message-tools"]}>
-                                {message?.tools?.map((tool) => (
-                                  <div
-                                    key={tool.id}
-                                    title={tool?.errorMsg}
-                                    className={styles["chat-message-tool"]}
-                                  >
-                                    {tool.isError === false ? (
-                                      <ConfirmIcon />
-                                    ) : tool.isError === true ? (
-                                      <CloseIcon />
-                                    ) : (
-                                      <LoadingButtonIcon />
-                                    )}
-                                    <span>{tool?.function?.name}</span>
-                                  </div>
-                                ))}
+                                {message?.tools?.map((tool) => {
+                                  const isWebSearchLoading =
+                                    tool?.function?.name === "web_search" &&
+                                    tool.isError === undefined;
+                                  const toolLabel = isWebSearchLoading
+                                    ? "🔍 Searching the web..."
+                                    : tool?.function?.name;
+
+                                  return (
+                                    <div
+                                      key={tool.id}
+                                      title={tool?.errorMsg}
+                                      className={styles["chat-message-tool"]}
+                                    >
+                                      {tool.isError === false ? (
+                                        <ConfirmIcon />
+                                      ) : tool.isError === true ? (
+                                        <CloseIcon />
+                                      ) : (
+                                        <LoadingButtonIcon />
+                                      )}
+                                      <span>{toolLabel}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                             <div className={styles["chat-message-item"]}>

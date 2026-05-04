@@ -72,13 +72,17 @@ export async function executeTool(
   try {
     switch (name) {
       case "webSearch": {
-        const res = await fetch(
-          `/api/web-search?q=${encodeURIComponent(args.q || "")}`,
-        );
+        const res = await fetch("/api/search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query: args.q || "" }),
+        });
         if (!res.ok) throw new Error(`webSearch failed: ${res.status}`);
         const data = await res.json();
-        // Return top 3 results as text
-        const results = (data.results || []).slice(0, 3);
+        // Return top 5 results as text
+        const results = (data.results || []).slice(0, 5);
         if (results.length === 0) return "No results found.";
         return results
           .map((r: any) => `**${r.title}**\n${r.url}\n${r.snippet || ""}`)

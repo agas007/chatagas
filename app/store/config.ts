@@ -49,6 +49,7 @@ export const DEFAULT_CONFIG = {
   tightBorder: !!config?.isApp,
   sendPreviewBubble: true,
   enableAutoGenerateTitle: true,
+  enableWebSearch: true,
   sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
   showSidebar: true,
 

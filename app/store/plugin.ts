@@ -6,6 +6,8 @@ import { getClientConfig } from "../config/client";
 import yaml from "js-yaml";
 import { adapter, getOperationId } from "../utils";
 import { useAccessStore } from "./access";
+import { useAppConfig } from "./config";
+import { runWebSearch, webSearchTool } from "@/app/utils/tools/webSearch";
 
 const isApp = getClientConfig()?.isApp !== false;
 
@@ -49,8 +51,8 @@ export const FunctionToolService = {
       plugin?.authType == "basic"
         ? `Basic ${plugin?.authToken}`
         : plugin?.authType == "bearer"
-        ? `Bearer ${plugin?.authToken}`
-        : plugin?.authToken;
+          ? `Bearer ${plugin?.authToken}`
+          : plugin?.authToken;
     const authLocation = plugin?.authLocation || "header";
     const definition = yaml.load(plugin.content) as any;
     const serverURL = definition?.servers?.[0]?.url;
@@ -212,10 +214,25 @@ export const usePluginStore = createPersistStore(
         .map((id) => plugins[id])
         .filter((i) => i)
         .map((p) => FunctionToolService.add(p));
+      const builtinTools =
+        useAppConfig.getState().enableWebSearch === false
+          ? []
+          : [
+              {
+                tools: [webSearchTool],
+                funcs: {
+                  web_search: async ({ query }: { query?: string }) =>
+                    runWebSearch(query || ""),
+                },
+              },
+            ];
+      const allTools = builtinTools.concat(selected as any) as Array<{
+        tools: FunctionToolItem[];
+        funcs: Record<string, Function>;
+      }>;
       return [
-        // @ts-ignore
-        selected.reduce((s, i) => s.concat(i.tools), []),
-        selected.reduce((s, i) => Object.assign(s, i.funcs), {}),
+        allTools.reduce((s, i) => s.concat(i.tools), [] as FunctionToolItem[]),
+        allTools.reduce((s, i) => Object.assign(s, i.funcs), {}),
       ];
     },
     get(id?: string) {
